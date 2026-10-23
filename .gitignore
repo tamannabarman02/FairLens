@@ -19,3 +19,5 @@ outputs/jobs/
 outputs/ui_screenshots/*.png
 !outputs/ui_screenshots/readme_*.png
 outputs/model_verification_log.txt
+configs/local.yaml
+outputs/runs.sqlite

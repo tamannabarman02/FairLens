@@ -48,8 +48,12 @@ class ScoreCache:
 
 def detector_identity(det) -> str:
     """Cache key for a detector: name + model + (for local checkpoints) training timestamp."""
+    from ..config import pinned_revision
+    from ..hardware import device
+
     info = det.info()
-    ident = f"{info['name']}|{info.get('model', '')}|{info.get('revision') or ''}"
+    rev = info.get("revision") or pinned_revision(info.get("model"))
+    ident = f"{info['name']}|{info.get('model', '')}|{rev or ''}|{device()}"
     tr = info.get("training") or {}
     if tr:
         ident += f"|{tr.get('trained_at', '')}"
@@ -79,3 +83,12 @@ def score_texts(det, texts: list[str], cache: ScoreCache | None = None, batch_si
             progress(min(i + len(chunk), len(todo)), len(todo))
     ms = (time.perf_counter() - t0) * 1000 / len(todo) if todo else float("nan")
     return have, ms
+
+
+def generator_identity(rw) -> str:
+    """Cache key for a rewriter: model id + pinned revision + device (V4 1.6)."""
+    from ..config import pinned_revision
+    from ..hardware import device
+
+    mid = getattr(rw, "model_id", rw.name)
+    return f"{mid}|{getattr(rw, 'revision', None) or pinned_revision(mid) or ''}|{device()}"

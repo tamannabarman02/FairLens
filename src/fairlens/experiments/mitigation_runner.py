@@ -23,7 +23,7 @@ from ..models import manager
 from ..reliability_gate import baselines as B
 from ..reliability_gate.rules import ACCEPT, HUMAN_REVIEW, RETRY, GateConfig, decide, judge
 from ..reliability_gate.signals import compute_signals, normalise
-from .cache import ScoreCache, detector_identity, score_texts
+from .cache import ScoreCache, detector_identity, generator_identity, score_texts
 from .tracking import RunTracker
 
 PROC = PROJECT_ROOT / "datasets" / "processed"
@@ -51,7 +51,7 @@ def generate(rewriters: dict, items: list[tuple[str, str]], strict: bool, attemp
         if strict and name == "rule_based":
             continue
         manager().clear()
-        ident = getattr(rw, "model_id", name)
+        ident = generator_identity(rw) if name != "rule_based" else name
         log(f"  generating with {rw.display} ({ident}) for {len(items)} inputs, strict={strict}")
         t0 = time.perf_counter()
         for k, (iid, text) in enumerate(items):

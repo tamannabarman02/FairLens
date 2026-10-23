@@ -64,7 +64,12 @@ def main():
     ap.add_argument("--pages", default=",".join(PAGES))
     ap.add_argument("--flow", action="store_true")
     a = ap.parse_args()
-    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", r"D:\FairLens_cache\playwright")
+    sys.path.insert(0, str(ROOT / "src"))
+    from fairlens.config import load_config
+
+    pw_path = load_config()["paths"].get("playwright_browsers")  # optional, per machine (configs/local.yaml)
+    if pw_path:
+        os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(pw_path))
     from playwright.sync_api import sync_playwright
 
     proc = None
@@ -72,7 +77,7 @@ def main():
     if not url:
         url = "http://localhost:8599"
         proc = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true",
-                                 "--server.port", "8599"], cwd=ROOT, stdout=open(OUT.parent / "ui_smoke_server.log", "w"),
+                                 "--server.port", "8599"], cwd=ROOT, stdout=open(OUT.parent / "ui_smoke_server.log", "w", encoding="utf-8"),
                                 stderr=subprocess.STDOUT, env={**os.environ, "PYTHONUTF8": "1"})
     OUT.mkdir(parents=True, exist_ok=True)
     report = {"url": url, "pages": {}, "flow": None}
@@ -119,7 +124,7 @@ def main():
     finally:
         if proc:
             proc.terminate()
-    (OUT / "report.json").write_text(json.dumps(report, indent=2))
+    (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     bad = [k for k, v in report["pages"].items() if v["errors"] or v["horizontal_overflow"]]
     print(f"pages checked: {len(report['pages'])}, with problems: {len(bad)}")
 

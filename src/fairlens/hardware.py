@@ -22,6 +22,8 @@ class HardwareInfo:
     cuda: bool
     gpu_name: str | None
     gpu_vram_gb: float | None
+    mps: bool
+    device: str
     internet: bool
     torch_version: str | None
 
@@ -75,6 +77,8 @@ def detect(check_internet: bool = True, disk_path: str | None = None) -> Hardwar
         cuda=cuda,
         gpu_name=gpu_name,
         gpu_vram_gb=vram,
+        mps=_mps_available(),
+        device=device(),
         internet=_internet() if check_internet else False,
         torch_version=torch_version,
     )
@@ -93,10 +97,52 @@ def select_profile(info: HardwareInfo | None = None) -> str:
     return "lite"
 
 
-def device() -> str:
+def _mps_available() -> bool:
     try:
         import torch
 
-        return "cuda" if torch.cuda.is_available() else "cpu"
+        return bool(getattr(torch.backends, "mps", None) and torch.backends.mps.is_available())
     except ImportError:
-        return "cpu"
+        return False
+
+
+def available_devices() -> list[str]:
+    out = []
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            out.append("cuda")
+    except ImportError:
+        pass
+    if _mps_available():
+        out.append("mps")
+    return out + ["cpu"]
+
+
+def device() -> str:
+    """Device order CUDA -> MPS -> CPU. FAIRLENS_DEVICE=cuda|mps|cpu forces one; an unavailable forced device
+    falls back to the automatic choice (with a warning) instead of crashing."""
+    avail = available_devices()
+    forced = os.environ.get("FAIRLENS_DEVICE", "").strip().lower()
+    if forced:
+        if forced in avail:
+            return forced
+        import warnings
+
+        warnings.warn(f"FAIRLENS_DEVICE={forced} is not available here; using {avail[0]}", stacklevel=2)
+    return avail[0]
+
+
+def place(model):
+    """Move a torch model to the selected device (no-op for CPU)."""
+    dev = device()
+    return model.to(dev) if dev != "cpu" else model
+
+
+def to_model(batch, model):
+    """Move a tokenizer/processor output (BatchEncoding/BatchFeature) to the model's device."""
+    dev = getattr(model, "device", None)
+    if dev is None or str(dev) == "cpu" or not hasattr(batch, "to"):
+        return batch
+    return batch.to(dev)

@@ -29,7 +29,7 @@ def test_bootstrap():
 
 def test_tracking_roundtrip(tmp_path):
     data = tmp_path / "d.csv"
-    data.write_text("a,b\n1,2\n")
+    data.write_text("a,b\n1,2\n", encoding="utf-8")
     t = tracking.RunTracker("unit", config={"x": 1}, seed=7, dataset_files=[data], db_path=tmp_path / "runs.sqlite")
     t.save_artifact("res.json", {"ok": True})
     t.finish(metrics={"f1": 0.5})
@@ -38,7 +38,7 @@ def test_tracking_roundtrip(tmp_path):
     man = tracking.load_manifest(runs[0])
     assert man["seed"] == 7 and man["status"] == "completed" and man["hardware"]["cpu_threads"] >= 1
     assert list(man["datasets"].values())[0] == tracking.file_sha(data)
-    assert json.loads((t.dir / "res.json").read_text()) == {"ok": True}
+    assert json.loads((t.dir / "res.json").read_text(encoding="utf-8")) == {"ok": True}
 
 
 class _Blob:

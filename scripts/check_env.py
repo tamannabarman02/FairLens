@@ -16,11 +16,15 @@ from fairlens.hardware import detect, select_profile  # noqa: E402
 def main() -> None:
     info = detect()
     profile = select_profile(info)
-    cache = load_config()["paths"]["cache_dir"]
+    import os
+
+    cache = os.environ.get("HF_HOME")
     drives = {}
-    for d in ["C:\\", "D:\\", "F:\\"]:
+    import psutil
+
+    for part in psutil.disk_partitions(all=False):
         try:
-            drives[d] = round(shutil.disk_usage(d).free / 2**30, 1)
+            drives[part.mountpoint] = round(shutil.disk_usage(part.mountpoint).free / 2**30, 1)
         except OSError:
             pass
     pkgs = {}
@@ -57,12 +61,11 @@ def main() -> None:
         "",
         "## Consequences for the build",
         "",
-        "- No CUDA GPU: all training and inference run on CPU with `torch` CPU wheels.",
-        "- 16 GB RAM but often only ~2 GB free while other apps run: models are loaded lazily and",
+        f"- Selected compute device: `{info.device}` (order CUDA -> MPS -> CPU; FAIRLENS_DEVICE overrides).",
+        f"- RAM {info.ram_total_gb} GB total, {info.ram_available_gb} GB available at check time: models load lazily and",
         "  only one large model is kept resident at a time (`fairlens.models.ModelManager`).",
-        "- C: has little free space, so the virtual environment (`D:/FairLens/.venv`), pip cache and",
-        "  Hugging Face cache (`D:/FairLens_cache`) live on D:.",
-        "- Python 3.11 is used for the venv (better ML wheel coverage than the system 3.13/3.14).",
+        f"- Model cache (HF_HOME) on this machine: `{cache}` (set per machine in configs/local.yaml or FAIRLENS_CACHE).",
+        "- Python 3.11 is used for the venv on every OS (install.ps1 / install.sh).",
         "",
         "```json",
         json.dumps(info.to_dict(), indent=2),

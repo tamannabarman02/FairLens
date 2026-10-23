@@ -8,6 +8,7 @@ import re
 
 from ..config import load_config
 from ..config import pinned_revision
+from ..hardware import place, to_model
 from ..models import manager
 from . import prompts
 from .base import Rewriter
@@ -49,7 +50,7 @@ class Seq2SeqRewriter(Rewriter):
             rev = self.revision or pinned_revision(getattr(self, "model_id", None) or getattr(self, "model_path", None))
             kw = {"revision": rev} if rev else {}
             return (AutoTokenizer.from_pretrained(self.model_id, **kw),
-                    AutoModelForSeq2SeqLM.from_pretrained(self.model_id, **kw).eval())
+                    place(AutoModelForSeq2SeqLM.from_pretrained(self.model_id, **kw).eval()))
 
         return manager().get(f"gen:{self.model_id}", loader)
 
@@ -60,7 +61,7 @@ class Seq2SeqRewriter(Rewriter):
         cfg = _gen_cfg()
         _seed(cfg.pop("seed"))
         prompt = prompts.seq2seq_prompt(text, strict, facts)
-        enc = tok(prompt, return_tensors="pt", truncation=True, max_length=512)
+        enc = to_model(tok(prompt, return_tensors="pt", truncation=True, max_length=512), model)
         with torch.inference_mode():
             ids = model.generate(**enc, **cfg)
         return clean_output(tok.decode(ids[0], skip_special_tokens=True), text), prompt
@@ -80,7 +81,7 @@ class ChatRewriter(Rewriter):
             rev = self.revision or pinned_revision(getattr(self, "model_id", None) or getattr(self, "model_path", None))
             kw = {"revision": rev} if rev else {}
             return (AutoTokenizer.from_pretrained(self.model_id, **kw),
-                    AutoModelForCausalLM.from_pretrained(self.model_id, dtype="auto", **kw).eval())
+                    place(AutoModelForCausalLM.from_pretrained(self.model_id, dtype="auto", **kw).eval()))
 
         return manager().get(f"gen:{self.model_id}", loader)
 
@@ -92,7 +93,7 @@ class ChatRewriter(Rewriter):
         _seed(cfg.pop("seed"))
         msgs = prompts.chat_messages(text, strict, facts)
         prompt = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-        enc = tok(prompt, return_tensors="pt")
+        enc = to_model(tok(prompt, return_tensors="pt"), model)
         with torch.inference_mode():
             ids = model.generate(**enc, **cfg, pad_token_id=tok.eos_token_id)
         out = tok.decode(ids[0, enc["input_ids"].shape[1]:], skip_special_tokens=True)

@@ -3,7 +3,7 @@
 # `revision` pins a commit hash once verified (scripts/verify_models.py records it).
 
 paths:
-  cache_dir: D:/FairLens_cache/hf        # HF_HOME; override with env FAIRLENS_CACHE
+  cache_dir: null                       # HF_HOME; null = per-user ~/.cache/fairlens/hf. Override per machine in configs/local.yaml or with FAIRLENS_CACHE
   checkpoints: checkpoints              # fine-tuned detector weights (relative to project root)
   outputs: outputs
   datasets: datasets

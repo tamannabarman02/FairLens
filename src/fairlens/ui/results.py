@@ -45,12 +45,12 @@ def manifest(run: dict) -> dict:
 
 def model_verification() -> dict | None:
     p = PROJECT_ROOT / "outputs" / "model_verification" / "verification.json"
-    return json.loads(p.read_text()) if p.exists() else None
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def dataset_manifest() -> dict | None:
     p = PROJECT_ROOT / "datasets" / "processed" / "dataset_manifest.json"
-    return json.loads(p.read_text()) if p.exists() else None
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def use_case_results() -> dict[str, dict]:

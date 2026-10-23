@@ -13,7 +13,7 @@ MANIFEST = PROJECT_ROOT / "datasets" / "images" / "coco_val2017_subset" / "manif
 def samples() -> list[dict]:
     if not MANIFEST.exists():
         return []
-    return json.loads(MANIFEST.read_text())["images"]
+    return json.loads(MANIFEST.read_text(encoding="utf-8"))["images"]
 
 
 def render():

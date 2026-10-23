@@ -55,7 +55,7 @@ def fetch(url: str, tries: int = 4) -> bytes:
 
 def build_subset(n_person: int, n_other: int, seed: int = 42) -> list[dict]:
     if MANIFEST.exists():
-        m = json.loads(MANIFEST.read_text())
+        m = json.loads(MANIFEST.read_text(encoding="utf-8"))
         if m["n_person"] == n_person and m["n_other"] == n_other:
             return m["images"]
     RAW.mkdir(parents=True, exist_ok=True)
@@ -68,8 +68,8 @@ def build_subset(n_person: int, n_other: int, seed: int = 42) -> list[dict]:
         with zipfile.ZipFile(zp) as z:
             for name, dest in [("annotations/captions_val2017.json", cap_p), ("annotations/instances_val2017.json", inst_p)]:
                 dest.write_bytes(z.read(name))
-    caps = json.loads(cap_p.read_text())
-    inst = json.loads(inst_p.read_text())
+    caps = json.loads(cap_p.read_text(encoding="utf-8"))
+    inst = json.loads(inst_p.read_text(encoding="utf-8"))
     licenses = {l["id"]: {"name": l["name"], "url": l["url"]} for l in inst["licenses"]}
     person_imgs = {a["image_id"] for a in inst["annotations"] if a["category_id"] == 1}
     refs: dict[int, list[str]] = {}
@@ -91,7 +91,7 @@ def build_subset(n_person: int, n_other: int, seed: int = 42) -> list[dict]:
                     "license": licenses[info["license"]], "coco_url": info["coco_url"], "flickr_url": info.get("flickr_url"),
                     "width": info["width"], "height": info["height"], "reference_captions": refs.get(iid, [])})
     MANIFEST.write_text(json.dumps({"source": "COCO 2017 val (images: Flickr licences per image; annotations CC BY 4.0)",
-                                    "seed": seed, "n_person": n_person, "n_other": n_other, "images": out}, indent=2))
+                                    "seed": seed, "n_person": n_person, "n_other": n_other, "images": out}, indent=2), encoding="utf-8")
     return out
 
 

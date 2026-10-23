@@ -1,0 +1,3 @@
+# Copy to configs/local.yaml to override settings on one machine (that file is gitignored).
+# paths:
+#   cache_dir: D:/FairLens_cache/hf   # e.g. keep large model downloads on another drive

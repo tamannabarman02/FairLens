@@ -36,7 +36,7 @@ def start(name: str, args: list[str] | None = None) -> dict:
     p = subprocess.Popen(cmd, cwd=PROJECT_ROOT, stdout=fh, stderr=subprocess.STDOUT, creationflags=flags,
                          env={**__import__("os").environ, "PYTHONUTF8": "1", "HF_HUB_DISABLE_PROGRESS_BARS": "1"})
     rec = {"id": jid, "name": name, "cmd": cmd, "pid": p.pid, "log": str(log), "started": time.time()}
-    (_dir() / f"{jid}.json").write_text(json.dumps(rec))
+    (_dir() / f"{jid}.json").write_text(json.dumps(rec), encoding="utf-8")
     return rec
 
 
@@ -64,7 +64,7 @@ def cancel(rec: dict) -> None:
     except psutil.NoSuchProcess:
         pass
     rec["cancelled"] = True
-    (_dir() / f"{rec['id']}.json").write_text(json.dumps(rec))
+    (_dir() / f"{rec['id']}.json").write_text(json.dumps(rec), encoding="utf-8")
 
 
 def log_tail(rec: dict, n: int = 20) -> str:
@@ -79,7 +79,7 @@ def log_tail(rec: dict, n: int = 20) -> str:
 def all_jobs() -> list[dict]:
     out = []
     for p in sorted(_dir().glob("*.json"), reverse=True):
-        rec = json.loads(p.read_text())
+        rec = json.loads(p.read_text(encoding="utf-8"))
         rec["status"] = status(rec)
         out.append(rec)
     return out

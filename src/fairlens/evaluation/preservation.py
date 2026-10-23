@@ -7,6 +7,7 @@ from collections import Counter
 import numpy as np
 
 from ..config import load_config, pinned_revision
+from ..hardware import device, place, to_model
 from ..models import manager
 from . import facts as fact_checker
 
@@ -18,7 +19,7 @@ class SemanticSimilarity:
     def _load(self):
         from sentence_transformers import SentenceTransformer
 
-        return manager().get(f"emb:{self.model_id}", lambda: SentenceTransformer(self.model_id, device="cpu", revision=pinned_revision(self.model_id)))
+        return manager().get(f"emb:{self.model_id}", lambda: SentenceTransformer(self.model_id, device=device(), revision=pinned_revision(self.model_id)))
 
     def similarity(self, a: list[str], b: list[str]) -> list[float]:
         model = self._load()
@@ -38,7 +39,7 @@ class Entailment:
 
         def loader():
             return (AutoTokenizer.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)),
-                    AutoModelForSequenceClassification.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)).eval())
+                    place(AutoModelForSequenceClassification.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)).eval()))
 
         return manager().get(f"nli:{self.model_id}", loader)
 
@@ -52,7 +53,7 @@ class Entailment:
             enc = tok(premises[i:i + 16], hypotheses[i:i + 16], padding=True, truncation=True,
                       max_length=256, return_tensors="pt")
             with torch.inference_mode():
-                p = torch.softmax(model(**enc).logits.float(), dim=-1).numpy()
+                p = torch.softmax(model(**to_model(enc, model)).logits.float(), dim=-1).cpu().numpy()
             out.extend({id2[j]: float(row[j]) for j in range(len(row))} for row in p)
         return out
 
