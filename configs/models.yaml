@@ -1,0 +1,111 @@
+# FairLens model registry, thresholds and hardware profiles.
+# Every model the system loads is declared here; adapters are resolved by `adapter`.
+# `revision` pins a commit hash once verified (scripts/verify_models.py records it).
+
+paths:
+  cache_dir: D:/FairLens_cache/hf        # HF_HOME; override with env FAIRLENS_CACHE
+  checkpoints: checkpoints              # fine-tuned detector weights (relative to project root)
+  outputs: outputs
+  datasets: datasets
+
+hardware_profiles:
+  # Selected automatically from detected RAM / GPU; user can force via FAIRLENS_PROFILE or the Lite toggle.
+  lite:
+    description: "CPU, <= 8 GB RAM. Smallest checkpoints, one model in memory at a time."
+    max_resident_mb: 1500
+  standard:
+    description: "CPU, 8-16 GB RAM. Base-size checkpoints, one large model at a time."
+    max_resident_mb: 3500
+  gpu:
+    description: "CUDA GPU available."
+    max_resident_mb: 8000
+
+detectors:
+  rule_based:
+    adapter: rule_based
+    display: Rule-based
+    family: rule
+  bert:
+    adapter: hf_finetuned
+    display: BERT
+    family: bert
+    base_model: distilbert-base-uncased
+    checkpoint: checkpoints/distilbert_bias
+    lite: true
+  deberta:
+    adapter: hf_finetuned
+    display: DeBERTa
+    family: deberta
+    base_model: microsoft/deberta-v3-small
+    checkpoint: checkpoints/deberta_bias
+    lite: true
+  bart_mnli:
+    adapter: zero_shot_nli
+    display: BART-MNLI
+    family: nli
+    model_id: facebook/bart-large-mnli
+    lite_model_id: valhalla/distilbart-mnli-12-1
+    hypotheses:
+      biased: "This text contains a stereotype or biased generalization about a social group."
+      neutral: "This text is neutral and does not stereotype any social group."
+  hub_pretrained:
+    adapter: hf_pretrained
+    display: Hub pretrained
+    family: bert
+    model_id: null                       # filled after license/task verification in Phase 1
+    optional: true
+
+mitigation:
+  generation:
+    seed: 13
+    max_new_tokens: 96
+    do_sample: false
+    num_beams: 1
+    repetition_penalty: 1.1
+  rewriters:
+    rule_based:
+      adapter: rule_rewrite
+      display: Rule-based
+    flan_t5:
+      adapter: seq2seq
+      display: FLAN-T5
+      model_id: google/flan-t5-base
+      lite_model_id: google/flan-t5-small
+    qwen:
+      adapter: chat
+      display: Qwen
+      model_id: Qwen/Qwen2.5-0.5B-Instruct
+      large_model_id: Qwen/Qwen2.5-1.5B-Instruct
+
+preservation:
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  nli_model: cross-encoder/nli-deberta-v3-small
+  spacy_model: en_core_web_sm
+
+captioning:
+  captioners:
+    blip:
+      adapter: blip
+      display: BLIP
+      model_id: Salesforce/blip-image-captioning-base
+    florence:
+      adapter: florence
+      display: Florence-2
+      model_id: florence-community/Florence-2-base
+      fallback_model_id: nlpconnect/vit-gpt2-image-captioning
+  alignment_model: openai/clip-vit-base-patch32
+  max_upload_mb: 10
+
+gate:
+  # Transparent rule thresholds (see docs/METHODOLOGY.md for rationale).
+  biased_input_threshold: 0.5          # ensemble bias prob above which input counts as biased
+  min_bias_reduction: 0.15             # absolute drop in ensemble bias probability
+  max_residual_bias: 0.5
+  min_semantic_similarity: 0.70
+  require_bidirectional_entailment: true
+  min_entailment_prob: 0.5
+  min_fact_retention: 1.0              # all extracted facts must survive
+  max_detector_std: 0.35               # above this, detectors disagree -> HUMAN_REVIEW
+  min_confidence_margin: 0.10
+  length_ratio_bounds: [0.5, 2.0]
+  max_retries: 2
