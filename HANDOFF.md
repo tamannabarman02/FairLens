@@ -18,7 +18,7 @@ for each rewrite, plus an 11-page Streamlit dashboard.
 
 ## Setup on a new machine (Windows)
 ```powershell
-git clone <repo-or-copy-of-D:\FairLens> FairLens
+git clone https://github.com/tamannabarman02/FairLens.git   # private repo; the owner must add you as a collaborator
 cd FairLens
 powershell -ExecutionPolicy Bypass -File install.ps1     # creates .venv (Python 3.11), installs pinned deps
 $env:PYTHONUTF8 = "1"
@@ -45,6 +45,12 @@ $env:PYTHONUTF8 = "1"
 | `src/fairlens/experiments/` | run tracking (SQLite + manifests), score cache, batched mitigation runner, jobs |
 | `src/fairlens/ui/` | components, state, pages (11) ; `app.py` is the entry |
 | `scripts/` | train_detectors, run_benchmarks, run_ablations, run_image_experiment, verify_models, build_* |
+
+## Resume here (state when the owner's usage limit was reached)
+No jobs are running. DistilBERT is trained (`checkpoints/distilbert_bias`, local only: re-run
+`scripts/train_detectors.py --model bert` on a new machine, ~36 min). DeBERTa is NOT trained: fix the RAM-swapping
+problem first (freeze embeddings), exactly as described in `docs/PROGRESS.md` → "DeBERTa problem", then follow the
+numbered command list in "Exact next steps" there. No benchmark results exist yet; never fill numbers by hand.
 
 ## Pending (summary; details in docs/PROGRESS.md)
 Detector training (running at handoff time), prompt selection, all four benchmark runs, use-case runs, browser check
