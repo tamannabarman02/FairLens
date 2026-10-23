@@ -195,12 +195,16 @@ def mitigation_eval(auth: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     return pd.concat(parts, ignore_index=True)
 
 
-def main():
+def main(out: Path = OUT):
+    import hashlib
+    import json as _json
+
+    out.mkdir(parents=True, exist_ok=True)
     auth = load_authored()
     mit = mitigation_eval(auth)
-    mit.to_parquet(OUT / "mitigation_eval.parquet", index=False)
+    mit.to_parquet(out / "mitigation_eval.parquet", index=False)
     gate = pd.concat([controlled(auth, s) for s in SEEDS], ignore_index=True)
-    gate.to_parquet(OUT / "gate_controlled.parquet", index=False)
+    gate.to_parquet(out / "gate_controlled.parquet", index=False)
     print("mitigation_eval:", len(mit), mit.groupby(["source", "label"]).size().to_dict())
     g = gate[gate.seed == SEEDS[0]]
     print("gate_controlled (seed 11):", len(g), g.groupby(["gold"]).size().to_dict())
@@ -210,5 +214,37 @@ def main():
         print(f"  {p}: {ex.input_text!r}\n     -> {ex.candidate_text!r}")
 
 
+def record_manifest(out: Path) -> dict:
+    """Add the derived sets (and their authored source) to dataset_manifest.json in `out` (V4 1.3)."""
+    import hashlib
+    import json as _json
+
+    man_p = out / "dataset_manifest.json"
+    man = _json.loads(man_p.read_text(encoding="utf-8")) if man_p.exists() else {}
+    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()[:16]  # noqa: E731
+    man["derived_files"] = {
+        "mitigation_eval.parquet": {"rows": len(pd.read_parquet(out / "mitigation_eval.parquet")), "sha256": sha(out / "mitigation_eval.parquet"),
+                                    "built_by": "scripts/build_mitigation_sets.py", "seed": 42},
+        "gate_controlled.parquet": {"rows": len(pd.read_parquet(out / "gate_controlled.parquet")), "sha256": sha(out / "gate_controlled.parquet"),
+                                    "built_by": "scripts/build_mitigation_sets.py", "perturbation_seeds": SEEDS},
+        "authored_cases.jsonl": {"rows": sum(1 for _ in open(AUTHORED, encoding="utf-8")), "sha256": sha(AUTHORED),
+                                 "path": "datasets/curated/authored_cases.jsonl"},
+    }
+    man_p.write_text(_json.dumps(man, indent=2), encoding="utf-8")
+    return man["derived_files"]
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    import shutil
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", type=Path, default=OUT, help="output folder (temp folder = verify without overwriting)")
+    a = ap.parse_args()
+    if a.out != OUT:  # the builder reads detection.parquet and the manifest from the canonical folder
+        a.out.mkdir(parents=True, exist_ok=True)
+        for f in ["detection.parquet", "dataset_manifest.json"]:
+            if not (a.out / f).exists():
+                shutil.copy(OUT / f, a.out / f)
+    main(a.out)
+    print(record_manifest(a.out))

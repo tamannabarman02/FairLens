@@ -188,5 +188,28 @@
       "n": 309
     }
   ],
-  "groups_spanning_splits": 0
+  "groups_spanning_splits": 0,
+  "derived_files": {
+    "mitigation_eval.parquet": {
+      "rows": 276,
+      "sha256": "ff25a4d646dcb3da",
+      "built_by": "scripts/build_mitigation_sets.py",
+      "seed": 42
+    },
+    "gate_controlled.parquet": {
+      "rows": 2481,
+      "sha256": "516a092d31b13a11",
+      "built_by": "scripts/build_mitigation_sets.py",
+      "perturbation_seeds": [
+        11,
+        22,
+        33
+      ]
+    },
+    "authored_cases.jsonl": {
+      "rows": 136,
+      "sha256": "497198a2ddfb53c2",
+      "path": "datasets/curated/authored_cases.jsonl"
+    }
+  }
 }
