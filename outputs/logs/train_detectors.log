@@ -40,3 +40,4 @@ Notes:
 [bert] epoch 2/3 step 450/648 loss 0.4192 (1.05s/step, eta epoch 3.5 min)
 [bert] epoch 2/3 step 500/648 loss 0.4190 (1.06s/step, eta epoch 2.6 min)
 [bert] epoch 2/3 step 550/648 loss 0.4217 (1.07s/step, eta epoch 1.7 min)
+[bert] epoch 2/3 step 600/648 loss 0.4241 (1.07s/step, eta epoch 0.8 min)
