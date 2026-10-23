@@ -1,7 +1,7 @@
 {
   "run_id": "20261024-002803-train_detector-691400",
   "kind": "train_detector",
-  "status": "running",
+  "status": "completed",
   "started_at": "2026-10-23T18:58:03+00:00",
   "command": "train_detectors.py --model all",
   "config": {
@@ -35,5 +35,36 @@
     "gpu_vram_gb": null,
     "internet": false,
     "torch_version": "2.14.1+cpu"
+  },
+  "finished_at": "2026-10-23T19:34:25+00:00",
+  "runtime_s": 2182.18,
+  "metrics": {
+    "best_val_macro_f1": 0.7610638000837637
+  },
+  "artifacts": {
+    "checkpoint": "D:\\FairLens\\checkpoints\\distilbert_bias",
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.6067316304018469,
+        "val_macro_f1": 0.7224833619913937,
+        "val_acc": 0.7225106182161397,
+        "epoch_s": 677.3
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.4208497938320593,
+        "val_macro_f1": 0.7442184585287981,
+        "val_acc": 0.7442189712128362,
+        "epoch_s": 716.3
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.25414364746977275,
+        "val_macro_f1": 0.7610638000837637,
+        "val_acc": 0.7621519584709768,
+        "epoch_s": 787.5
+      }
+    ]
   }
 }

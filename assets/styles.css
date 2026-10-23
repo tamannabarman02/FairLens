@@ -20,6 +20,8 @@
 
 /* ---- Streamlit chrome ---------------------------------------------------------------------- */
 html, body, [class*="st-"], .stApp, button, input, textarea { font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif !important; }
+/* keep Streamlit's icon font for material icons (otherwise icon names render as text) */
+[data-testid="stIconMaterial"], span.material-symbols-rounded, [class*="material-symbols"] { font-family: 'Material Symbols Rounded' !important; }
 .stApp { background: var(--bg) !important; color: var(--text); }
 header[data-testid="stHeader"] { background: transparent !important; height: 0; }
 [data-testid="stToolbar"] { display: none; }
@@ -82,7 +84,7 @@ textarea, input, [data-baseweb="select"] > div, [data-baseweb="input"] {
 /* ---- FairLens components ------------------------------------------------------------------ */
 .fl-topbar { display:flex; justify-content:space-between; align-items:center; margin: 0 0 .4rem; }
 .fl-crumb { color: var(--muted); font-size: 13px; font-weight: 500; }
-.fl-chip { display:inline-flex; align-items:center; gap:8px; background: var(--surface); border:1px solid var(--border);
+.fl-chip { white-space: nowrap; display:inline-flex; align-items:center; gap:8px; background: var(--surface); border:1px solid var(--border);
   border-radius:999px; padding:4px 12px 4px 4px; font-size:13px; font-weight:600; color: var(--text); }
 .fl-avatar { width:26px; height:26px; border-radius:50%; background: linear-gradient(135deg, var(--accent), #B49CFF);
   color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }

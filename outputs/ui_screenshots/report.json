@@ -1,0 +1,21 @@
+{
+  "url": "http://localhost:8599",
+  "pages": {
+    "/light/1366": {
+      "errors": [],
+      "console": [],
+      "horizontal_overflow": false,
+      "screenshot": "outputs\\ui_screenshots\\home_light_1366.png"
+    },
+    "text/light/1366": {
+      "errors": [],
+      "console": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "horizontal_overflow": false,
+      "screenshot": "outputs\\ui_screenshots\\text_light_1366.png"
+    }
+  },
+  "flow": null
+}

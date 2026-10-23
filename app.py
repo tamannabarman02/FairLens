@@ -52,11 +52,11 @@ with st.sidebar:
 
 from fairlens.hardware import select_profile  # noqa: E402
 
-top_l, top_r = st.columns([6, 1.4], vertical_alignment="center")
+top_l, top_r = st.columns([5, 2], vertical_alignment="center")
 with top_l:
     C.render(f'<div class="fl-crumb">FairLens / {C.esc(nav.title)}</div>')
 with top_r:
-    b1, b2 = st.columns([1, 2.2], vertical_alignment="center")
+    b1, b2 = st.columns([1, 3], vertical_alignment="center")
     with b1:
         dark = st.session_state.theme == "dark"
         if st.button("", icon=":material/light_mode:" if dark else ":material/dark_mode:", key="theme_toggle",

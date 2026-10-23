@@ -12,7 +12,7 @@ def render():
       <p>FairLens finds biased language with four detectors, proposes neutral rewrites with two language models and a
       rule baseline, and then checks every rewrite with the Reliability Gate before anything is accepted.</p></div>""")
     st.write("")
-    b1, b2, _ = st.columns([1.1, 1.1, 4])
+    b1, b2, _ = st.columns([1.2, 1.3, 3.5])
     if b1.button("Analyze Text", type="primary", icon=":material/notes:", use_container_width=True):
         go("Text Analysis")
     if b2.button("Analyze Image", icon=":material/image:", use_container_width=True):
