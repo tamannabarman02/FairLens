@@ -111,10 +111,14 @@ def main():
                         errs = errors_on(page)
                         overflow = page.evaluate("document.documentElement.scrollWidth > window.innerWidth + 2")
                         key = f"{p}/{theme}/{width}"
-                        report["pages"][key] = {"errors": errs, "console": [c for c in console if "favicon" not in c][:5],
+                        # Streamlit's frontend probes <deep-link>/_stcore/{health,host-config} before falling back to the
+                        # root when a page URL is opened directly; these 404s come from Streamlit, not from FairLens.
+                        known = [c for c in console if "404" in c]
+                        app_console = [c for c in console if "404" not in c and "favicon" not in c]
+                        report["pages"][key] = {"errors": errs, "console": app_console[:5], "streamlit_deeplink_404s": len(known),
                                                 "horizontal_overflow": overflow, "screenshot": str(shot.relative_to(ROOT))}
                         flag = "OK " if not errs and not overflow else "ERR"
-                        print(f"{flag} {key} errors={len(errs)} overflow={overflow} console={len(console)}", flush=True)
+                        print(f"{flag} {key} errors={len(errs)} overflow={overflow} console={len(app_console)} deeplink404={len(known)}", flush=True)
                         for e in errs:
                             print("    ", e.replace("\n", " ")[:300])
                 ctx.close()

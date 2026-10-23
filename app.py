@@ -50,7 +50,7 @@ with st.sidebar:
     res = manager().resident()
     st.caption("Models in memory: " + (", ".join(k.split(":", 1)[1].split("/")[-1] for k in res) if res else "none yet (loaded on first use)"))
 
-from fairlens.hardware import select_profile  # noqa: E402
+from fairlens.hardware import device, select_profile  # noqa: E402
 
 top_l, top_r = st.columns([5, 2], vertical_alignment="center")
 with top_l:
@@ -65,6 +65,8 @@ with top_r:
             st.rerun()
     with b2:
         prof = "lite" if st.session_state.lite else select_profile()
-        C.render(f'<span class="fl-chip" title="Hardware profile selected at startup"><span class="fl-avatar">FL</span>CPU · {prof}</span>')
+        dev = device().upper()
+        C.render(f'<span class="fl-chip" title="Compute device chosen at startup (CUDA, then MPS, then CPU; FAIRLENS_DEVICE overrides) '
+                 f'and hardware profile"><span class="fl-avatar">FL</span>{dev} · {prof}</span>')
 
 nav.run()
