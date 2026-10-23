@@ -13,3 +13,8 @@ outputs/tmp/
 *.safetensors
 *.bin
 *.egg-info/
+outputs/*.log
+outputs/logs/
+outputs/jobs/
+outputs/ui_screenshots/*.png
+!outputs/ui_screenshots/readme_*.png

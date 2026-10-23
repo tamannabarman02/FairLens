@@ -70,7 +70,8 @@ def evaluate(model, tok, texts, labels, max_length, bs=32):
     return {"macro_f1": float(f1_score(labels, preds, average="macro")), "acc": float((preds == labels).mean())}, probs
 
 
-def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42) -> dict:
+def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42, max_length: int | None = None,
+          log_every: int = 50, out_suffix: str = "") -> dict:
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_linear_schedule_with_warmup
 
@@ -80,8 +81,10 @@ def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42) 
     hp = dict(HPARAMS[name])
     if epochs:
         hp["epochs"] = epochs
+    if max_length:
+        hp["max_length"] = max_length
     base = spec["base_model"]
-    out_dir = PROJECT_ROOT / spec["checkpoint"]
+    out_dir = PROJECT_ROOT / (spec["checkpoint"] + out_suffix)
     set_seed(seed)
     df = pd.read_parquet(DATA)
     tr = df[df.split == "train"]
@@ -116,7 +119,7 @@ def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42) 
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step(); sched.step(); opt.zero_grad()
             ep_loss += out.loss.item(); step += 1
-            if bi % 50 == 0:
+            if bi % log_every == 0:
                 el = time.perf_counter() - t_ep
                 print(f"[{name}] epoch {ep+1}/{hp['epochs']} step {bi}/{steps_per_epoch} loss {ep_loss/(bi+1):.4f} "
                       f"({el/(bi+1):.2f}s/step, eta epoch {el/(bi+1)*(steps_per_epoch-bi-1)/60:.1f} min)", flush=True)
@@ -144,9 +147,12 @@ def main():
     ap.add_argument("--model", default="all")
     ap.add_argument("--epochs", type=int)
     ap.add_argument("--max-train", type=int)
+    ap.add_argument("--max-length", type=int)
+    ap.add_argument("--log-every", type=int, default=50)
+    ap.add_argument("--out-suffix", default="", help="e.g. _speedtest: write to a separate checkpoint dir")
     a = ap.parse_args()
     for name in (["bert", "deberta"] if a.model == "all" else [a.model]):
-        meta = train(name, a.epochs, a.max_train)
+        meta = train(name, a.epochs, a.max_train, max_length=a.max_length, log_every=a.log_every, out_suffix=a.out_suffix)
         print(json.dumps({k: meta[k] for k in ["detector", "best_val_macro_f1", "train_seconds"]}))
 
 
