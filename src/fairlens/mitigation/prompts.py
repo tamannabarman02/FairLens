@@ -15,6 +15,20 @@ STRICT_INSTRUCTION = (
 )
 
 
+def _load_selected() -> None:
+    """Use the instruction chosen on the development sample by scripts/select_prompts.py, if present."""
+    global BASE_INSTRUCTION
+    import json
+    from pathlib import Path
+
+    p = Path(__file__).resolve().parents[3] / "configs" / "prompt_selection.json"
+    if p.exists():
+        BASE_INSTRUCTION = json.loads(p.read_text(encoding="utf-8"))["instruction"]
+
+
+_load_selected()
+
+
 def instruction(strict: bool) -> str:
     return STRICT_INSTRUCTION if strict else BASE_INSTRUCTION
 

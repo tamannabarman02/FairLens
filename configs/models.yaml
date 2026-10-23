@@ -52,7 +52,8 @@ detectors:
     adapter: hf_pretrained
     display: Hub pretrained
     family: bert
-    model_id: null                       # filled after license/task verification in Phase 1
+    model_id: himel7/bias-detector       # RoBERTa fine-tuned on BABE; Apache-2.0; verified in Phase 1
+    biased_label_ids: [1]                # id2label {0: non-biased, 1: biased} (checked in verification.json)
     optional: true
 
 mitigation:

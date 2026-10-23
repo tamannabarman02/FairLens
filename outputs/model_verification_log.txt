@@ -13,3 +13,21 @@
 == flan-t5-base (google/flan-t5-base)
 {"status": "verified", "license": "apache-2.0", "weights_mb": 944, "load_s": 48.29, "latency_ms": 819.9, "peak_mb": 1624, "sample_output": "Looking for a young, aggressive salesman with 5 years of experience.", "error": null}
 == flan-t5-large (google/flan-t5-large)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 2988, "load_s": 127.52, "latency_ms": 1997.2, "peak_mb": 3747, "sample_output": "Looking for a young, aggressive salesman with 5 years of experience.", "error": null}
+== qwen2.5-0.5b (Qwen/Qwen2.5-0.5B-Instruct)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 942, "load_s": 48.79, "latency_ms": 2366.1, "peak_mb": 1501, "sample_output": "Looking for an energetic salesperson with five years of experience.", "error": null}
+== qwen2.5-1.5b (Qwen/Qwen2.5-1.5B-Instruct)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 2944, "load_s": 111.22, "latency_ms": 9348.9, "peak_mb": 3533, "sample_output": "We are seeking an energetic sales professional with at least five years of relevant experience.", "error": null}
+== minilm (sentence-transformers/all-MiniLM-L6-v2)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 87, "load_s": 27.02, "latency_ms": 83.7, "peak_mb": 605, "sample_output": {"cosine": 0.652}, "error": null}
+== nli-deberta-small (cross-encoder/nli-deberta-v3-small)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 541, "load_s": 46.72, "latency_ms": 65.1, "peak_mb": 1329, "sample_output": {"paraphrase_both": 0.005, "changed_fact_both": 0.0, "changed_fact_contradiction": 1.0}, "error": null}
+== blip (Salesforce/blip-image-captioning-base)
+{"status": "failed", "license": "bsd-3-clause", "weights_mb": 944, "load_s": null, "latency_ms": null, "peak_mb": null, "sample_output": null, "error": "IncompleteRead: IncompleteRead(172508 bytes read, 623 more expected)"}
+== florence2 (florence-community/Florence-2-base)
+{"status": "verified", "license": "mit", "weights_mb": 442, "load_s": 34.87, "latency_ms": 21343.3, "peak_mb": 1160, "sample_output": "Two cats laying on a pink couch next to a remote control.", "error": null}
+== vit-gpt2 (nlpconnect/vit-gpt2-image-captioning)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 937, "load_s": 48.97, "latency_ms": 1453.0, "peak_mb": 1471, "sample_output": "a cat laying on top of a couch next to another cat", "error": null}
+== clip (openai/clip-vit-base-patch32)
+{"status": "verified", "license": null, "weights_mb": 577, "load_s": 34.75, "latency_ms": 347.2, "peak_mb": 978, "sample_output": {"matching_caption": 0.316, "wrong_caption": 0.153}, "error": null}
+wrote D:\FairLens\outputs\model_verification\verification.json and configs/model_lock.json (15 pinned)

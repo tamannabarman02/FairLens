@@ -1,0 +1,57 @@
+{
+  "_provenance": "SYNTHETIC DEMONSTRATION INPUTS written for the FairLens demo. Not benchmark data, not real job adverts, posts or model outputs. Names and organisations are fictional.",
+  "cases": [
+    {
+      "id": "recruitment",
+      "title": "Recruitment and job-text review",
+      "users": "HR-tech teams, recruiters",
+      "problem": "Job descriptions can reproduce age and gender stereotypes and discourage qualified applicants.",
+      "kind": "text",
+      "input": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+      "must_preserve": ["5 years", "B2B software sales"]
+    },
+    {
+      "id": "genai_output",
+      "title": "Generative AI and chatbot output evaluation",
+      "users": "AI developers, LLM evaluation teams",
+      "problem": "LLM outputs often assume a profession's gender (doctor = he, nurse = she).",
+      "kind": "text",
+      "input": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+      "must_preserve": ["surgeon", "nurse", "engineer", "secretary"]
+    },
+    {
+      "id": "benchmarking",
+      "title": "AI model testing and benchmarking",
+      "users": "AI/ML researchers",
+      "problem": "Different bias detectors disagree; teams need to compare false positives, F1 and runtime on one dataset.",
+      "kind": "benchmark",
+      "input": "Compare BERT, DeBERTa, BART-MNLI and the rule baseline on the shared test split (see Model Comparison)."
+    },
+    {
+      "id": "inclusive_writing",
+      "title": "Content moderation and inclusive writing",
+      "users": "Content and communication teams",
+      "problem": "Reports and professional documents can contain loaded or stereotyping language that needs neutral alternatives.",
+      "kind": "text",
+      "input": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+      "must_preserve": ["2025"]
+    },
+    {
+      "id": "caption_eval",
+      "title": "Computer vision and caption evaluation",
+      "users": "Computer vision researchers",
+      "problem": "Captioners may describe people with gendered or unsupported attributes not visible in the image.",
+      "kind": "image",
+      "input": "First COCO val2017 image with the 'person' category in datasets/images/coco_val2017_subset"
+    },
+    {
+      "id": "reliability",
+      "title": "AI safety and reliability research",
+      "users": "AI safety researchers, academic institutions",
+      "problem": "A bias rewrite can silently change numbers, negations or facts. The Gate must catch this rather than accept the least-biased text.",
+      "kind": "text",
+      "input": "Women are not suited to engineering, so only 3 of our 40 engineers are female and none were promoted in 2023.",
+      "must_preserve": ["3", "40", "2023", "none"]
+    }
+  ]
+}

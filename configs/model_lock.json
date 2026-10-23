@@ -1,0 +1,82 @@
+{
+  "distilbert-base-uncased": {
+    "sha": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:39:59+00:00"
+  },
+  "bert-base-uncased": {
+    "sha": "86b5e0934494bd15c9632b12f734a8a67f723594",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:40:38+00:00"
+  },
+  "microsoft/deberta-v3-small": {
+    "sha": "a36c739020e01763fe789b4b85e2df55d6180012",
+    "license": "mit",
+    "verified_at": "2026-10-23T18:41:27+00:00"
+  },
+  "himel7/bias-detector": {
+    "sha": "b79f0150e5a8b77158925f455045035a66e7a438",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:42:06+00:00"
+  },
+  "facebook/bart-large-mnli": {
+    "sha": "d7645e127eaf1aefc7862fd59a17a5aa8558b8ce",
+    "license": "mit",
+    "verified_at": "2026-10-23T18:43:03+00:00"
+  },
+  "valhalla/distilbart-mnli-12-1": {
+    "sha": "506336d4214470e3b3b36021358daae28e25ceac",
+    "license": null,
+    "verified_at": "2026-10-23T18:44:19+00:00"
+  },
+  "google/flan-t5-base": {
+    "sha": "7bcac572ce56db69c1ea7c8af255c5d7c9672fc2",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:45:10+00:00"
+  },
+  "google/flan-t5-large": {
+    "sha": "0613663d0d48ea86ba8cb3d7a44f0f65dc596a2a",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:47:21+00:00"
+  },
+  "Qwen/Qwen2.5-0.5B-Instruct": {
+    "sha": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:48:14+00:00"
+  },
+  "Qwen/Qwen2.5-1.5B-Instruct": {
+    "sha": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:50:16+00:00"
+  },
+  "sentence-transformers/all-MiniLM-L6-v2": {
+    "sha": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:50:45+00:00"
+  },
+  "cross-encoder/nli-deberta-v3-small": {
+    "sha": "fa2804872c3b4bd748f38c0185cc85775361e735",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:51:33+00:00"
+  },
+  "Salesforce/blip-image-captioning-base": {
+    "sha": "82a37760796d32b1411fe092ab5d4e227313294b",
+    "license": "bsd-3-clause",
+    "verified_at": "2026-10-23T18:57:17+00:00"
+  },
+  "florence-community/Florence-2-base": {
+    "sha": "00921df66db728a9ceb750f5eca43e5c203a2051",
+    "license": "mit",
+    "verified_at": "2026-10-23T18:52:33+00:00"
+  },
+  "nlpconnect/vit-gpt2-image-captioning": {
+    "sha": "dc68f91c06a1ba6f15268e5b9c13ae7a7c514084",
+    "license": "apache-2.0",
+    "verified_at": "2026-10-23T18:54:10+00:00"
+  },
+  "openai/clip-vit-base-patch32": {
+    "sha": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "license": null,
+    "verified_at": "2026-10-23T18:55:09+00:00"
+  }
+}

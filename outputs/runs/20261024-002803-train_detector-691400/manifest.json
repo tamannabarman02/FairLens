@@ -1,0 +1,39 @@
+{
+  "run_id": "20261024-002803-train_detector-691400",
+  "kind": "train_detector",
+  "status": "running",
+  "started_at": "2026-10-23T18:58:03+00:00",
+  "command": "train_detectors.py --model all",
+  "config": {
+    "detector": "bert",
+    "base_model": "distilbert-base-uncased",
+    "revision": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+    "lr": 5e-05,
+    "epochs": 3,
+    "batch_size": 16,
+    "max_length": 128,
+    "n_train": 10365,
+    "n_val": 2119,
+    "seed": 42
+  },
+  "seed": 42,
+  "git_commit": "04c768c-dirty",
+  "datasets": {
+    "datasets\\processed\\detection.parquet": "7cbacdedf983ba1c"
+  },
+  "models": {},
+  "hardware": {
+    "python": "3.11.9",
+    "os": "Windows 10 (10.0.26200)",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cpu_threads": 12,
+    "ram_total_gb": 15.7,
+    "ram_available_gb": 3.4,
+    "disk_free_gb": 109.5,
+    "cuda": false,
+    "gpu_name": null,
+    "gpu_vram_gb": null,
+    "internet": false,
+    "torch_version": "2.14.1+cpu"
+  }
+}

@@ -54,6 +54,9 @@ class GateConfig:
     max_residual_bias: float = 0.5
     min_semantic_similarity: float = 0.70
     require_bidirectional_entailment: bool = True
+    # "both": min(P(orig=>rewrite), P(rewrite=>orig)); "forward": P(orig=>rewrite) only, i.e. the rewrite
+    # adds nothing the original did not say (removing a stereotyped clause breaks the backward direction).
+    entailment_mode: str = "both"
     min_entailment_prob: float = 0.5
     max_contradiction: float = 0.5
     min_fact_retention: float = 1.0
@@ -97,7 +100,8 @@ def judge(sig: Signals, cfg: GateConfig, input_biased: bool | None = None) -> Ve
     lo, hi = cfg.length_ratio_bounds
     checks = {
         "FACT_LOSS": sig.fact_retention >= cfg.min_fact_retention,
-        "ENTAILMENT_FAIL": (not cfg.require_bidirectional_entailment) or sig.entailment_both_ways >= cfg.min_entailment_prob,
+        "ENTAILMENT_FAIL": (not cfg.require_bidirectional_entailment) or (
+            sig.entailment_both_ways if cfg.entailment_mode == "both" else sig.entail_forward) >= cfg.min_entailment_prob,
         "CONTRADICTION": sig.contradiction <= cfg.max_contradiction,
         "LOW_SIMILARITY": sig.semantic_similarity >= cfg.min_semantic_similarity,
         "LENGTH_OUT_OF_BOUNDS": lo <= sig.length_ratio <= hi,
