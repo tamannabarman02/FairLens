@@ -63,9 +63,9 @@ def detok(tokens) -> str:
     return s
 
 
-def build() -> None:
+def build(out: Path = OUT) -> None:
     RAW.mkdir(parents=True, exist_ok=True)
-    OUT.mkdir(parents=True, exist_ok=True)
+    out.mkdir(parents=True, exist_ok=True)
     sources: dict[str, dict] = {}
     rows: list[dict] = []
 
@@ -146,7 +146,7 @@ def build() -> None:
     manifest = {"built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "seed": SEED,
                 "sources": sources, "files": {}, "duplicates_removed": int(dupes)}
     for name, df in files.items():
-        p = OUT / name
+        p = out / name
         df.to_parquet(p, index=False)
         manifest["files"][name] = {"rows": len(df), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()[:16]}
     manifest["detection_counts"] = (det.groupby(["source", "split", "label"]).size()
@@ -154,11 +154,15 @@ def build() -> None:
     # leakage check across splits by group
     g = det.groupby("group_id")["split"].nunique()
     manifest["groups_spanning_splits"] = int((g > 1).sum())
-    (OUT / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2))
+    (out / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in manifest.items() if k != "detection_counts"}, indent=2))
     print(det.groupby(["split", "label"]).size().unstack())
     print(det.groupby(["source", "split"]).size().unstack())
 
 
 if __name__ == "__main__":
-    build()
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", type=Path, default=OUT, help="output folder (use a temp folder to verify hashes without overwriting)")
+    build(ap.parse_args().out)

@@ -1,80 +1,39 @@
 # Progress log
 
-Resumable status for anyone continuing this build. **Update this file after every finished step and commit + push.**
-Last updated: 2026-10-24 ~01:25 local, when the owner's usage limit was reached. **No jobs are running.**
+Working specification: **V4** (`docs/spec/FAIRLENS_V4_SPEC.md`, copied from the owner's artifact).
+Protocol decisions: `docs/PROTOCOL_CHANGES.md`. Update this file after every step; commit and push.
 Repo: https://github.com/tamannabarman02/FairLens (private).
 
-## Status at a glance
+## Stage 0 audit (2026-10-24, Windows 11 laptop, i7-1355U, CPU only, Python 3.11.9)
 
-| Item | State | Evidence |
-|---|---|---|
-| Phase 0 environment + setup | DONE | `docs/ENVIRONMENT.md`, `install.ps1`, `requirements.txt` (pinned) |
-| Model verification (16 models, real inference) | DONE, all verified | `outputs/model_verification/verification.json`, `configs/model_lock.json` |
-| Datasets (BABE, StereoSet, CrowS-Pairs, WinoBias probe) | DONE | `datasets/processed/*.parquet`, `dataset_manifest.json` (15,136 rows, 0 leaking groups) |
-| Curated authored set + mitigation set + controlled gate set | DONE | `datasets/curated/authored_cases.jsonl` (91 biased + 45 neutral), `mitigation_eval.parquet` (276), `gate_controlled.parquet` |
-| DistilBERT fine-tune | DONE: best val macro-F1 **0.761** (epochs 0.722 / 0.744 / 0.761), 36 min | `checkpoints/distilbert_bias/` (weights local only, gitignored), `fairlens_training.json` tracked |
-| DeBERTa-v3-small fine-tune | **NOT DONE**: stopped twice, no checkpoint saved | see "DeBERTa problem" below |
-| FLAN-T5 copy-failure investigation | DONE (negative result) | see Findings |
-| Prompt selection (train-split dev sample) | NOT RUN | `scripts/select_prompts.py` (now includes few-shot variants) |
-| Detection / mitigation / gate+ablation / image benchmarks | **NOT RUN** (no results exist yet) | scripts ready |
-| Use-case runs | NOT RUN | `scripts/run_use_cases.py` |
-| Dashboard (11 pages) | WRITTEN; browser smoke test **passed 44/44** (11 pages x light/dark x 1366/1920, no Streamlit exceptions, no horizontal overflow) with empty states only | `scripts/ui_smoke.py`, `outputs/ui_screenshots/report.json` (screenshots local) |
-| Dashboard with real results / interactive flow (`ui_smoke.py --flow`) | NOT YET VERIFIED | needs trained models + benchmark runs |
-| Tests | **44 passed** (`pytest -m "not slow"`); 2 slow real-model tests written, not yet run | `tests/` |
-| Docs written | ENVIRONMENT, LEGACY_REVIEW, DATASETS, MODEL_CARD_REGISTRY (measured table filled by generator), METHODOLOGY, ARCHITECTURE, UI_PLAN | `docs/` |
-| Docs NOT written | LIMITATIONS, RESEARCH_REPORT, PROJECT_REPORT_OUTLINE, APPLICATIONS_AND_VIVA, final README; RESULTS.md is a placeholder until runs exist | |
+Evidence file: `outputs/audit/stage0_audit.json` (from `scripts/audit_stage0.py`), plus the files named below.
+The owner's Mac was **not available** in this session, so every macOS item is PENDING.
 
-## Findings so far (real)
-- CPU-only i7-1355U, 15.7 GB RAM but typically ~2 GB free -> Windows swaps (pagefile 2 GB in use observed).
-- Florence-2 runs via `florence-community/Florence-2-base` **without trust_remote_code**; ViT-GPT2 fallback verified.
-- **FLAN-T5 base and large copy biased input unchanged** in zero-shot (4 prompt formats) and 3-shot tests on train-split
-  sentences. Real capability limit; kept as required by the brief and reported as a negative result.
-- Qwen2.5-0.5B rewrote the sample correctly (2.4 s); 1.5B slower (9.3 s) with slight meaning drift.
-- BART-MNLI original pair hypothesis scored a neutral sentence 0.90 -> 5 templates, chosen on val inside the detection benchmark.
-- WNC blocked (gated mirror, unreachable host) -> BABE used.
+| # | Claim | What was checked / command | Actual outcome | Evidence | Status | Next action |
+|---|---|---|---|---|---|---|
+| 1 | 44 fast tests pass | `.venv\Scripts\python -m pytest -q -m "not slow"` | 44 passed, 2 deselected (46 collected) on Windows | `outputs/audit/stage0_pytest_fast.txt` | **PARTIAL** (Windows VERIFIED; macOS PENDING) | Run on the Mac; CI (1.2c) adds GitHub-hosted macOS/Linux |
+| 2 | Installs from scratch on Windows and macOS/Linux | Read `install.ps1`, `install.sh`, `requirements.txt` | Not yet run on a clean machine. Found a blocker for macOS: `requirements.txt` pins `torch==2.14.1+cpu` from the PyTorch CPU index; no `+cpu` wheels exist for macOS, so `install.sh` would fail there | `requirements.txt` lines 5-6 | **FAILED** (macOS by inspection) / **PENDING** (clean Windows) | Platform markers for torch (1.1), clean-venv install on Windows, CI install on all three OSes |
+| 3 | 16 models verified, revisions pinned | Compared `verification.json` with `configs/model_lock.json`; checked pinned snapshot exists in the HF cache | 16/16 `verified`, 16 locked, every lock SHA equals the verified SHA, every pinned snapshot is cached. `google/flan-t5-small` (Lite-mode rewriter) is configured but **not verified or locked**. Inference was not re-run in this audit (records dated 2026-10-23) | `outputs/audit/stage0_audit.json` → `models` | **PARTIAL** | Re-run one inference per model in profiling (1.4) and verify flan-t5-small |
+| 4 | 15,136 rows, no leaking groups | `python scripts/build_datasets.py --out D:/FairLens_cache/tmp/rebuild_check`, compared manifests; leakage queries | Rebuild is **byte-identical**: detection 15,136 rows sha `7cbacdedf983ba1c`, CrowS 1,508, StereoSet 4,229, WinoBias 1,584, all hashes match; 0 groups and 0 exact texts span splits; **4 texts span splits after lower-casing/punctuation normalisation** (near-duplicates); mitigation set has 0 benchmark items from train/val; gate set has 0 inputs spanning val/test. `mitigation_eval.parquet` (276 rows) and `gate_controlled.parquet` (2,481 rows) are **not in the manifest** | `stage0_audit.json` → `datasets` | **VERIFIED** (counts, hashes, group leakage) with 2 findings | Log the 4 near-duplicates (D.1) and add both derived files to the manifest (1.3) |
+| 5 | DistilBERT trained, val macro-F1 0.761 | `python scripts/eval_checkpoint.py --model bert` on the local checkpoint (weights are present on this laptop, absent from Git) | Re-evaluated val macro-F1 **0.7610638 = recorded 0.7610638** (abs diff 0.0), n = 2,119, 176 s on CPU | `outputs/audit/eval_bert_val.json`, `checkpoints/distilbert_bias/fairlens_training.json`, run `20261024-002803-train_detector-691400` | **VERIFIED** (this laptop) | Other machines must retrain (`train_detectors.py --model bert`) because weights are not in Git |
+| 6 | DeBERTa not trained; two stopped runs marked running | Listed `checkpoints/`; read both manifests | No DeBERTa checkpoint. Runs `20261024-010429-…-107de1` (full) and `…-011003-…-27bede` (320-sample speed test) were killed; both were still `running`. **Corrected** to `stopped` with a `stop_note` (cause: RAM swapping) | `outputs/runs/<id>/manifest.json`, `outputs/runs.sqlite` | **VERIFIED** (status corrected) | Profile and apply the DeBERTa fix ladder (1.4) |
+| 7 | No benchmark results exist | `runs.sqlite` + folder listing | 3 runs, all `train_detector`; **0 benchmark runs**. Manifest paths are stored as absolute Windows paths (`D:\FairLens\outputs\runs\…`) | `stage0_audit.json` → `runs` | **VERIFIED** (no results) with finding | Relative POSIX paths + index rebuilt from folders (1.2b, 1.2d) |
+| 8 | Uploads work for TXT, PDF, DOCX, CSV and images | Function-level calls to `extract_text`/`load_image` on generated files incl. Windows encodings; browser upload **not** tested | TXT, PDF, DOCX (paragraphs), quoted CSV, JPG, PNG, GIF extract correctly; UTF-16+CRLF and Windows-1252 TXT work; corrupt/empty/unsupported files are rejected with messages. **DOCX tables are not extracted** ("No text found"). (An unquoted-comma CSV in the first audit attempt split into columns; that was a malformed test file, not a loader bug.) | `stage0_audit.json` → `uploads` | **PARTIAL** (function level only; 1 bug) | Fix DOCX tables; browser test per format (1.5) |
+| 9 | Git history intact | `git fsck`, `git log`, `git ls-remote origin main` | fsck clean, 12 commits from `753455a` (Phase 0) to `df97294`, local = `origin/main`, private repo | terminal output, GitHub | **VERIFIED** | — |
+| 10 | Hardware selection | Read `hardware.py`, adapters, `app.py` | Checks CUDA only; **no MPS, no `FAIRLENS_DEVICE` override; models are never moved to a GPU**; MiniLM hard-coded to `device="cpu"`; top bar always shows "CPU" | `stage0_audit.json` → `hardware` | **FAILED** against V4 1.2 | Implement CUDA → MPS → CPU (1.2) |
+| 11 | Scripts, locks, manifests, UI plan, tests, run storage exist | Inventory | Present: 13 scripts (`audit_stage0`, `build_datasets`, `build_mitigation_sets`, `check_env`, `eval_checkpoint`, `generate_results_md`, `run_ablations`, `run_benchmarks`, `run_image_experiment`, `run_use_cases`, `select_prompts`, `train_detectors`, `ui_smoke`, `verify_models`), `configs/model_lock.json`, `dataset_manifest.json`, `docs/design/UI_PLAN.md`, 46 tests, `outputs/runs/` + `runs.sqlite`. OS assumptions found: `D:/FairLens_cache/hf` default in `models.yaml`, Windows paths in manifests and `ui_screenshots/report.json` | repo tree | **VERIFIED** (exists) with findings | 1.2b |
 
-## DeBERTa problem (must fix first)
-DeBERTa-v3-small training ran at >30 s/step (vs DistilBERT ~1 s/step) because of **RAM swapping**: its 128k-token
-embedding matrix (~98M of 141M params) plus AdamW state needs ~2.3 GB while only ~1.8 GB was free.
-Planned fix (not yet implemented): freeze the embedding layer for DeBERTa in `scripts/train_detectors.py`
-(line ~104: build AdamW over `p for p in model.parameters() if p.requires_grad` after setting
-`requires_grad=False` on `model.base_model.embeddings`), record `"freeze_embeddings": true` in HPARAMS/metadata,
-close other apps, then time 20 steps with `--max-train 320 --epochs 1 --log-every 4 --out-suffix _speedtest`
-(run with `python -u` and redirect to a file; piping through grep buffered output). If still too slow, use
-`--max-length 64` (p95 token length is 51) and/or `--epochs 2`, and document the change.
+Earlier UI smoke test (empty states only): 44/44 page renders without Streamlit exceptions, but each page logged two
+browser "404 Not Found" console errors (V4 UI audit finding), not yet investigated.
 
-## Exact next steps (run from `D:\FairLens`, ONE heavy job at a time)
-```powershell
-$env:PYTHONUTF8="1"; $env:HF_HUB_DISABLE_PROGRESS_BARS="1"
-.venv\Scripts\python.exe -m pytest -q -m "not slow"                         # sanity: expect 44 passed
-# 1. fix + train DeBERTa (see above), then:
-.venv\Scripts\python.exe -u scripts\train_detectors.py --model deberta > outputs\logs\train_deberta.log 2>&1
-# 2. prompt variant on train-split dev sample (~20-30 min)
-.venv\Scripts\python.exe scripts\select_prompts.py
-# 3. detection benchmark (~1 h, BART-MNLI slowest)
-.venv\Scripts\python.exe scripts\run_benchmarks.py --task detection
-# 4. gate benchmark + ablations (tunes thresholds on val) (~30 min)
-.venv\Scripts\python.exe scripts\run_ablations.py
-# 5. mitigation benchmark (uses tuned thresholds from step 4) (~1 h)
-.venv\Scripts\python.exe scripts\run_benchmarks.py --task mitigation
-# 6. image experiment (downloads COCO annotations 241 MB + 80 images) (~45 min)
-.venv\Scripts\python.exe scripts\run_image_experiment.py
-# 7. demo use cases, results doc, slow tests, browser flow test
-.venv\Scripts\python.exe scripts\run_use_cases.py
-.venv\Scripts\python.exe scripts\generate_results_md.py
-.venv\Scripts\python.exe -m pytest -q -m slow
-.venv\Scripts\python.exe scripts\ui_smoke.py --flow
-```
-Then write LIMITATIONS, RESEARCH_REPORT, PROJECT_REPORT_OUTLINE, APPLICATIONS_AND_VIVA (real numbers only),
-finish README; commit and `git push` after every step.
+## Stage status (V4 order)
+| Stage | Status |
+|---|---|
+| 0 Audit | DONE (table above); macOS items PENDING (no Mac in this session) |
+| 1 Cross-platform setup and reproducibility | IN PROGRESS |
+| 2–7 | NOT STARTED; **no benchmark results exist** |
 
-## Known caveats
-- `checkpoints/*/` weights, `datasets/raw/`, caches, logs and screenshots are gitignored (regenerable).
-- Avoid Python heredocs with backslashes in Git Bash (they were mangled once); use files or the Edit tool.
-- `outputs/runs/` contains 3 `train_detector` manifests: one completed (DistilBERT), two DeBERTa runs that were
-  stopped and remain marked `running`; they are real records of stopped runs, not results.
-
-## History
-- Phase 0: env check, skeleton, pinned requirements, installer; legacy Codex projects archived to `D:\FairLens_archive`.
-- Core library + tests; 16 models verified; datasets built; curated set authored; 11 UI pages; integration tests;
-  DistilBERT trained; FLAN-T5 diagnosed; UI browser-tested (empty states); private GitHub repo created and pushed.
+## Exact next steps
+1.1 torch platform markers + clean-venv install on Windows → 1.2 device order → 1.2b OS assumptions → 1.2c CI →
+1.2d run index from folders → 1.3 manifest for derived sets → 1.4 profiling + DeBERTa fix ladder → 1.5 uploads e2e →
+1.6 manifest fields test → D.1 label mapping → train DeBERTa → D.2 detection run → M.1/M.2 → G.1/G.2 → A.1–A.5 → I.1/I.2 → P.1–P.3, with UI (U.1–U.7) in separate commits.

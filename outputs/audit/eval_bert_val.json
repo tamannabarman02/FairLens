@@ -1,0 +1,12 @@
+{
+  "model": "bert",
+  "split": "val",
+  "n": 2119,
+  "device": "cpu",
+  "seconds": 175.9,
+  "macro_f1": 0.7610638000837637,
+  "accuracy": 0.7621519584709768,
+  "recorded_best_val_macro_f1": 0.7610638000837637,
+  "abs_diff": 0.0,
+  "trained_at": "2026-10-23T19:34:25+00:00"
+}

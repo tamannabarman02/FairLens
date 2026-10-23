@@ -1,0 +1,476 @@
+{
+  "generated_at": "2026-10-23T22:34:13+00:00",
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "models": {
+    "n_records": 16,
+    "n_verified": 16,
+    "n_locked": 16,
+    "all_lock_match": true,
+    "all_cached": true,
+    "config_models_without_lock": [
+      "google/flan-t5-small"
+    ],
+    "models": [
+      {
+        "key": "distilbert-base-uncased",
+        "model_id": "distilbert-base-uncased",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:39:59+00:00",
+        "sha": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+        "lock_sha": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer BertTokenizer, tokens=['looking', 'for', 'a', 'young', ',', 'aggressive', 'salesman', 'with']"
+      },
+      {
+        "key": "bert-base-uncased",
+        "model_id": "bert-base-uncased",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:40:38+00:00",
+        "sha": "86b5e0934494bd15c9632b12f734a8a67f723594",
+        "lock_sha": "86b5e0934494bd15c9632b12f734a8a67f723594",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer BertTokenizer, tokens=['looking', 'for', 'a', 'young', ',', 'aggressive', 'salesman', 'with']"
+      },
+      {
+        "key": "deberta-v3-small",
+        "model_id": "microsoft/deberta-v3-small",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:41:27+00:00",
+        "sha": "a36c739020e01763fe789b4b85e2df55d6180012",
+        "lock_sha": "a36c739020e01763fe789b4b85e2df55d6180012",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer DebertaV2Tokenizer, tokens=['\u2581Looking', '\u2581for', '\u2581a', '\u2581young', ',', '\u2581aggressive', '\u2581salesman', '\u2581with']"
+      },
+      {
+        "key": "hub-bias-roberta",
+        "model_id": "himel7/bias-detector",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:42:06+00:00",
+        "sha": "b79f0150e5a8b77158925f455045035a66e7a438",
+        "lock_sha": "b79f0150e5a8b77158925f455045035a66e7a438",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": {
+          "biased_sample": 0.491,
+          "neutral_sample": 0.016,
+          "biased_ids": [
+            1
+          ]
+        }
+      },
+      {
+        "key": "bart-large-mnli",
+        "model_id": "facebook/bart-large-mnli",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:43:03+00:00",
+        "sha": "d7645e127eaf1aefc7862fd59a17a5aa8558b8ce",
+        "lock_sha": "d7645e127eaf1aefc7862fd59a17a5aa8558b8ce",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": {
+          "biased_sample": 0.997,
+          "neutral_sample": 0.903
+        }
+      },
+      {
+        "key": "distilbart-mnli",
+        "model_id": "valhalla/distilbart-mnli-12-1",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:44:19+00:00",
+        "sha": "506336d4214470e3b3b36021358daae28e25ceac",
+        "lock_sha": "506336d4214470e3b3b36021358daae28e25ceac",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": {
+          "biased_sample": 0.885,
+          "neutral_sample": 0.788
+        }
+      },
+      {
+        "key": "flan-t5-base",
+        "model_id": "google/flan-t5-base",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:45:10+00:00",
+        "sha": "7bcac572ce56db69c1ea7c8af255c5d7c9672fc2",
+        "lock_sha": "7bcac572ce56db69c1ea7c8af255c5d7c9672fc2",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "Looking for a young, aggressive salesman with 5 years of experience."
+      },
+      {
+        "key": "flan-t5-large",
+        "model_id": "google/flan-t5-large",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:47:21+00:00",
+        "sha": "0613663d0d48ea86ba8cb3d7a44f0f65dc596a2a",
+        "lock_sha": "0613663d0d48ea86ba8cb3d7a44f0f65dc596a2a",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "Looking for a young, aggressive salesman with 5 years of experience."
+      },
+      {
+        "key": "qwen2.5-0.5b",
+        "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:48:14+00:00",
+        "sha": "7ae557604adf67be50417f59c2c2f167def9a775",
+        "lock_sha": "7ae557604adf67be50417f59c2c2f167def9a775",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "Looking for an energetic salesperson with five years of experience."
+      },
+      {
+        "key": "qwen2.5-1.5b",
+        "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:50:16+00:00",
+        "sha": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+        "lock_sha": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "We are seeking an energetic sales professional with at least five years of relevant experience."
+      },
+      {
+        "key": "minilm",
+        "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:50:45+00:00",
+        "sha": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+        "lock_sha": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": {
+          "cosine": 0.652
+        }
+      },
+      {
+        "key": "nli-deberta-small",
+        "model_id": "cross-encoder/nli-deberta-v3-small",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:51:33+00:00",
+        "sha": "fa2804872c3b4bd748f38c0185cc85775361e735",
+        "lock_sha": "fa2804872c3b4bd748f38c0185cc85775361e735",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": {
+          "paraphrase_both": 0.005,
+          "changed_fact_both": 0.0,
+          "changed_fact_contradiction": 1.0
+        }
+      },
+      {
+        "key": "blip",
+        "model_id": "Salesforce/blip-image-captioning-base",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:57:17+00:00",
+        "sha": "82a37760796d32b1411fe092ab5d4e227313294b",
+        "lock_sha": "82a37760796d32b1411fe092ab5d4e227313294b",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "two cats sleeping on a couch"
+      },
+      {
+        "key": "florence2",
+        "model_id": "florence-community/Florence-2-base",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:52:33+00:00",
+        "sha": "00921df66db728a9ceb750f5eca43e5c203a2051",
+        "lock_sha": "00921df66db728a9ceb750f5eca43e5c203a2051",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "Two cats laying on a pink couch next to a remote control."
+      },
+      {
+        "key": "vit-gpt2",
+        "model_id": "nlpconnect/vit-gpt2-image-captioning",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:54:10+00:00",
+        "sha": "dc68f91c06a1ba6f15268e5b9c13ae7a7c514084",
+        "lock_sha": "dc68f91c06a1ba6f15268e5b9c13ae7a7c514084",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": "a cat laying on top of a couch next to another cat"
+      },
+      {
+        "key": "clip",
+        "model_id": "openai/clip-vit-base-patch32",
+        "status": "verified",
+        "verified_at": "2026-10-23T18:55:09+00:00",
+        "sha": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+        "lock_sha": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+        "lock_matches": true,
+        "pinned_snapshot_in_cache": true,
+        "sample_output": {
+          "matching_caption": 0.316,
+          "wrong_caption": 0.153
+        }
+      }
+    ]
+  },
+  "datasets": {
+    "files": {
+      "detection.parquet": {
+        "manifest_rows": 15136,
+        "actual_rows": 15136,
+        "manifest_sha16": "7cbacdedf983ba1c",
+        "actual_sha16": "7cbacdedf983ba1c",
+        "ok": true
+      },
+      "crows_pairs.parquet": {
+        "manifest_rows": 1508,
+        "actual_rows": 1508,
+        "manifest_sha16": "4a9e3dbafbfa90c3",
+        "actual_sha16": "4a9e3dbafbfa90c3",
+        "ok": true
+      },
+      "stereoset_pairs.parquet": {
+        "manifest_rows": 4229,
+        "actual_rows": 4229,
+        "manifest_sha16": "9cc4faa719d3336f",
+        "actual_sha16": "9cc4faa719d3336f",
+        "ok": true
+      },
+      "winobias_probe.parquet": {
+        "manifest_rows": 1584,
+        "actual_rows": 1584,
+        "manifest_sha16": "74d5cb1f9f1ca5fd",
+        "actual_sha16": "74d5cb1f9f1ca5fd",
+        "ok": true
+      }
+    },
+    "group_ids_spanning_splits": 0,
+    "exact_texts_spanning_splits": 0,
+    "normalised_texts_spanning_splits": 4,
+    "split_label_counts": {
+      "test/0": 1268,
+      "test/1": 1384,
+      "train/0": 5052,
+      "train/1": 5313,
+      "val/0": 1014,
+      "val/1": 1105
+    },
+    "other_files": {
+      "mitigation_eval.parquet": {
+        "rows": 276,
+        "sha16": "ff25a4d646dcb3da",
+        "in_manifest": false
+      },
+      "gate_controlled.parquet": {
+        "rows": 2481,
+        "sha16": "516a092d31b13a11",
+        "in_manifest": false
+      }
+    },
+    "mitigation_benchmark_items_in_train_or_val": 0,
+    "gate_inputs_spanning_val_test": 0,
+    "authored_cases_rows": 136
+  },
+  "runs": {
+    "runs": [
+      {
+        "run_id": "20261024-002803-train_detector-691400",
+        "kind": "train_detector",
+        "status_db": "completed",
+        "status_manifest": "completed",
+        "finished_at": "2026-10-23T19:34:25+00:00",
+        "manifest_exists": true,
+        "manifest_path_stored": "D:\\FairLens\\outputs\\runs\\20261024-002803-train_detector-691400\\manifest.json",
+        "manifest_path_is_absolute": true,
+        "config": {
+          "detector": "bert",
+          "base_model": "distilbert-base-uncased",
+          "revision": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+          "lr": 5e-05,
+          "epochs": 3,
+          "batch_size": 16,
+          "max_length": 128,
+          "n_train": 10365,
+          "n_val": 2119,
+          "seed": 42
+        },
+        "manifest_fields": [
+          "artifacts",
+          "command",
+          "config",
+          "datasets",
+          "finished_at",
+          "git_commit",
+          "hardware",
+          "kind",
+          "metrics",
+          "models",
+          "run_id",
+          "runtime_s",
+          "seed",
+          "started_at",
+          "status"
+        ]
+      },
+      {
+        "run_id": "20261024-010429-train_detector-107de1",
+        "kind": "train_detector",
+        "status_db": "running",
+        "status_manifest": "running",
+        "finished_at": null,
+        "manifest_exists": true,
+        "manifest_path_stored": "D:\\FairLens\\outputs\\runs\\20261024-010429-train_detector-107de1\\manifest.json",
+        "manifest_path_is_absolute": true,
+        "config": {
+          "detector": "deberta",
+          "base_model": "microsoft/deberta-v3-small",
+          "revision": "a36c739020e01763fe789b4b85e2df55d6180012",
+          "lr": 5e-05,
+          "epochs": 3,
+          "batch_size": 16,
+          "max_length": 128,
+          "n_train": 10365,
+          "n_val": 2119,
+          "seed": 42
+        },
+        "manifest_fields": [
+          "command",
+          "config",
+          "datasets",
+          "git_commit",
+          "hardware",
+          "kind",
+          "models",
+          "run_id",
+          "seed",
+          "started_at",
+          "status"
+        ]
+      },
+      {
+        "run_id": "20261024-011003-train_detector-27bede",
+        "kind": "train_detector",
+        "status_db": "running",
+        "status_manifest": "running",
+        "finished_at": null,
+        "manifest_exists": true,
+        "manifest_path_stored": "D:\\FairLens\\outputs\\runs\\20261024-011003-train_detector-27bede\\manifest.json",
+        "manifest_path_is_absolute": true,
+        "config": {
+          "detector": "deberta",
+          "base_model": "microsoft/deberta-v3-small",
+          "revision": "a36c739020e01763fe789b4b85e2df55d6180012",
+          "lr": 5e-05,
+          "epochs": 1,
+          "batch_size": 16,
+          "max_length": 128,
+          "n_train": 320,
+          "n_val": 2119,
+          "seed": 42
+        },
+        "manifest_fields": [
+          "command",
+          "config",
+          "datasets",
+          "git_commit",
+          "hardware",
+          "kind",
+          "models",
+          "run_id",
+          "seed",
+          "started_at",
+          "status"
+        ]
+      }
+    ],
+    "run_folders": [
+      "20261024-002803-train_detector-691400",
+      "20261024-010429-train_detector-107de1",
+      "20261024-011003-train_detector-27bede"
+    ],
+    "benchmark_runs": [],
+    "checkpoints": {
+      "distilbert_bias": {
+        "files": [
+          "config.json",
+          "fairlens_training.json",
+          "model.safetensors",
+          "tokenizer.json",
+          "tokenizer_config.json"
+        ],
+        "has_weights": true
+      }
+    }
+  },
+  "uploads": {
+    "function_level": {
+      "txt": {
+        "ok": true,
+        "chars": 68
+      },
+      "csv": {
+        "ok": false,
+        "chars": 19
+      },
+      "docx": {
+        "ok": true,
+        "chars": 68
+      },
+      "pdf": {
+        "ok": true,
+        "chars": 68
+      },
+      "jpg": {
+        "ok": true
+      },
+      "png": {
+        "ok": true
+      },
+      "gif": {
+        "ok": true
+      }
+    },
+    "edge_cases": {
+      "utf16_crlf.txt": {
+        "ok": true
+      },
+      "cp1252.txt": {
+        "ok": true
+      },
+      "docx_table": {
+        "ok": false,
+        "error": "No text found in the file."
+      }
+    },
+    "negative_cases": {
+      "empty.txt": "rejected: The file is empty.",
+      "bad.pdf": "rejected: Could not read the PDF (PdfStreamError). Is it encrypted or corrupted?",
+      "x.exe": "rejected: Unsupported file type '.exe'. Use TXT, PDF, DOCX or CSV.",
+      "bad.png": "rejected: The file is not a valid image or is corrupted."
+    },
+    "note": "Function level only; the browser end-to-end check is V4 step 1.5."
+  },
+  "hardware": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "detected": {
+      "python": "3.11.9",
+      "os": "Windows 10 (10.0.26200)",
+      "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+      "cpu_threads": 12,
+      "ram_total_gb": 15.7,
+      "ram_available_gb": 2.3,
+      "disk_free_gb": 108.4,
+      "cuda": false,
+      "gpu_name": null,
+      "gpu_vram_gb": null,
+      "internet": false,
+      "torch_version": "2.14.1+cpu"
+    },
+    "profile": "standard",
+    "device()": "cpu",
+    "checks_cuda": true,
+    "checks_mps": false,
+    "FAIRLENS_DEVICE_override": false,
+    "models_moved_to_device": false,
+    "hardcoded_cpu_sentence_transformer": true,
+    "topbar_hardcodes_CPU": true
+  }
+}
