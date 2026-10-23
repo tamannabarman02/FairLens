@@ -39,6 +39,26 @@ def _decode(data: bytes) -> str:
     raise IngestionError("Could not decode the text file (tried UTF-8, UTF-16, Windows-1252).")
 
 
+def _docx_blocks(doc) -> list[str]:
+    """Paragraphs and table rows in document order (job adverts often keep requirements in tables)."""
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    out = []
+    for el in doc.element.body.iterchildren():
+        tag = el.tag.rsplit("}", 1)[-1]
+        if tag == "p":
+            t = Paragraph(el, doc).text.strip()
+            if t:
+                out.append(t)
+        elif tag == "tbl":
+            for row in Table(el, doc).rows:
+                cells = list(dict.fromkeys(c.text.strip() for c in row.cells if c.text.strip()))  # merged cells repeat
+                if cells:
+                    out.append(" | ".join(cells))
+    return out
+
+
 def extract_text(name: str, data: bytes, text_column: str | None = None) -> Document:
     if not data:
         raise IngestionError("The file is empty.")
@@ -76,7 +96,7 @@ def extract_text(name: str, data: bytes, text_column: str | None = None) -> Docu
             from docx import Document as Docx
 
             d = Docx(io.BytesIO(data))
-            text = "\n".join(p.text for p in d.paragraphs)
+            text = "\n".join(_docx_blocks(d))
         except Exception as exc:  # noqa: BLE001
             raise IngestionError(f"Could not read the DOCX file ({type(exc).__name__}).") from exc
     else:
