@@ -40,7 +40,7 @@ Use `.venv\Scripts\python.exe` and set `PYTHONUTF8=1`. Run ONE heavy job at a ti
 2. `python scripts/select_prompts.py` (~15 min) -> `configs/prompt_selection.json`.
 3. `python scripts/run_benchmarks.py --task detection` (~1 h; BART-MNLI is slowest).
 4. `python scripts/run_ablations.py` (~30 min) -> gate benchmark, tuned thresholds, ablations.
-5. `python scripts/run_benchmarks.py --task mitigation` (~1 h) -> uses tuned thresholds? NO: mitigation runner uses `GateConfig.from_config()`; consider passing tuned rules (see TODO below).
+5. `python scripts/run_benchmarks.py --task mitigation` (~1 h). Uses the val-tuned gate thresholds from step 4 automatically, so run step 4 first.
 6. `python scripts/run_image_experiment.py` (~45 min; downloads 241 MB COCO annotations + 80 images).
 7. `python scripts/run_use_cases.py` -> `outputs/use_cases/*.json`.
 8. Start UI: `.venv\Scripts\streamlit run app.py`; click through all 11 pages in light + dark, at 1366 and 1920 px; fix layout bugs.
@@ -50,7 +50,6 @@ Use `.venv\Scripts\python.exe` and set `PYTHONUTF8=1`. Run ONE heavy job at a ti
 
 ## Known TODOs / caveats
 - `scripts/generate_results_md.py` is referenced by `fairlens.experiments.jobs` but not written yet.
-- Mitigation runner should use the val-tuned gate thresholds from the latest gate run (`fairlens.ui.state.tuned_gate_overrides()`); wire this in before step 5.
 - UI has not been run in a browser yet; expect small Streamlit API/CSS fixes (Streamlit 1.66).
 - `datasets/raw/` and `checkpoints/` are gitignored (regenerable): `build_datasets.py` rebuilds data, `train_detectors.py` rebuilds checkpoints.
 - Avoid Python heredocs with backslashes in Git Bash (they were mangled once); use files or the Edit tool.

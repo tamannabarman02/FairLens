@@ -98,7 +98,10 @@ def run_mitigation(limit: int | None = None, lite: bool = False, rewriter_keys=N
     df = pd.read_parquet(PROC / "mitigation_eval.parquet")
     if limit:
         df = df.groupby("label", group_keys=False).apply(lambda d: d.head(max(1, limit * len(d) // len(df))))
-    cfg = cfg or GateConfig.from_config()
+    if cfg is None:
+        from ..ui.state import tuned_gate_overrides  # thresholds tuned on the gate *val* split, if a gate run exists
+
+        cfg = GateConfig.from_config(**tuned_gate_overrides())
     rewriters = build_rewriters(rewriter_keys, lite=lite)
     detectors = build_detectors(detector_keys, lite=lite)
     cache = ScoreCache()
