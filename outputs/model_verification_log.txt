@@ -1,0 +1,15 @@
+== distilbert-base-uncased (distilbert-base-uncased)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 256, "load_s": 32.84, "latency_ms": 118.3, "peak_mb": 728, "sample_output": "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer BertTokenizer, tokens=['looking', 'for', 'a', 'young', ',', 'aggressive', 'salesman', 'with']", "error": null}
+== bert-base-uncased (bert-base-uncased)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 420, "load_s": 37.09, "latency_ms": 46.0, "peak_mb": 889, "sample_output": "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer BertTokenizer, tokens=['looking', 'for', 'a', 'young', ',', 'aggressive', 'salesman', 'with']", "error": null}
+== deberta-v3-small (microsoft/deberta-v3-small)
+{"status": "verified", "license": "mit", "weights_mb": 273, "load_s": 30.94, "latency_ms": 367.7, "peak_mb": 774, "sample_output": "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer DebertaV2Tokenizer, tokens=['\u2581Looking', '\u2581for', '\u2581a', '\u2581young', ',', '\u2581aggressive', '\u2581salesman', '\u2581with']", "error": null}
+== hub-bias-roberta (himel7/bias-detector)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 476, "load_s": 36.97, "latency_ms": 72.5, "peak_mb": 964, "sample_output": {"biased_sample": 0.491, "neutral_sample": 0.016, "biased_ids": [1]}, "error": null}
+== bart-large-mnli (facebook/bart-large-mnli)
+{"status": "verified", "license": "mit", "weights_mb": 1554, "load_s": 54.77, "latency_ms": 299.2, "peak_mb": 2241, "sample_output": {"biased_sample": 0.997, "neutral_sample": 0.903}, "error": null}
+== distilbart-mnli (valhalla/distilbart-mnli-12-1)
+{"status": "verified", "license": null, "weights_mb": 849, "load_s": 42.46, "latency_ms": 160.7, "peak_mb": 1314, "sample_output": {"biased_sample": 0.885, "neutral_sample": 0.788}, "error": null}
+== flan-t5-base (google/flan-t5-base)
+{"status": "verified", "license": "apache-2.0", "weights_mb": 944, "load_s": 48.29, "latency_ms": 819.9, "peak_mb": 1624, "sample_output": "Looking for a young, aggressive salesman with 5 years of experience.", "error": null}
+== flan-t5-large (google/flan-t5-large)

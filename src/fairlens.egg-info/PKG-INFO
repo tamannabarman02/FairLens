@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: fairlens
-Version: 0.1.0
-Summary: Bias detection, mitigation and the FairLens Reliability Gate
-Requires-Python: >=3.10

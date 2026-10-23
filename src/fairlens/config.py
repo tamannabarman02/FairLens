@@ -22,6 +22,21 @@ def load_config(path: str | None = None) -> dict[str, Any]:
         return yaml.safe_load(fh)
 
 
+LOCK_PATH = PROJECT_ROOT / "configs" / "model_lock.json"
+
+
+@lru_cache(maxsize=1)
+def _lock() -> dict[str, dict]:
+    import json
+
+    return json.loads(LOCK_PATH.read_text()) if LOCK_PATH.exists() else {}
+
+
+def pinned_revision(model_id: str | None) -> str | None:
+    """Commit hash recorded by scripts/verify_models.py for a Hub model (None for local paths)."""
+    return _lock().get(model_id or "", {}).get("sha")
+
+
 def project_path(*parts: str) -> Path:
     return PROJECT_ROOT.joinpath(*parts)
 

@@ -11,3 +11,4 @@ outputs/cache/
 outputs/tmp/
 *.safetensors
 *.bin
+*.egg-info/

@@ -1,0 +1,192 @@
+{
+  "built_at": "2026-10-23T18:40:58+00:00",
+  "seed": 42,
+  "sources": {
+    "BABE": {
+      "repo": "mediabiasgroup/BABE",
+      "revision": "749f72c1b90f9ed6a9fb9dc7169db18f82dd8754",
+      "license": "CC BY-NC-SA 4.0 (per paper; card has no license field)"
+    },
+    "StereoSet": {
+      "repo": "McGill-NLP/stereoset",
+      "revision": "bf6e7ce50491784d094fb7afe60a70ecccb89035",
+      "license": "CC BY-SA 4.0"
+    },
+    "CrowS-Pairs": {
+      "url": "https://raw.githubusercontent.com/nyu-mll/crows-pairs/master/data/crows_pairs_anonymized.csv",
+      "sha256": "dfb36986ce0502abbaf7055b9176da3d08d48e07df1251991b5dfbcbceab9d0c",
+      "license": "CC BY-SA 4.0"
+    },
+    "WinoBias": {
+      "repo": "uclanlp/wino_bias",
+      "revision": "3f31267586e4408e3b3f77ec22198fd24ea8dc1d",
+      "license": "MIT"
+    }
+  },
+  "files": {
+    "detection.parquet": {
+      "rows": 15136,
+      "sha256": "7cbacdedf983ba1c"
+    },
+    "crows_pairs.parquet": {
+      "rows": 1508,
+      "sha256": "4a9e3dbafbfa90c3"
+    },
+    "stereoset_pairs.parquet": {
+      "rows": 4229,
+      "sha256": "9cc4faa719d3336f"
+    },
+    "winobias_probe.parquet": {
+      "rows": 1584,
+      "sha256": "74d5cb1f9f1ca5fd"
+    }
+  },
+  "duplicates_removed": 23,
+  "detection_counts": [
+    {
+      "source": "babe",
+      "split": "test",
+      "label": 0,
+      "n": 441
+    },
+    {
+      "source": "babe",
+      "split": "test",
+      "label": 1,
+      "n": 557
+    },
+    {
+      "source": "babe",
+      "split": "train",
+      "label": 0,
+      "n": 1193
+    },
+    {
+      "source": "babe",
+      "split": "train",
+      "label": 1,
+      "n": 1460
+    },
+    {
+      "source": "babe",
+      "split": "val",
+      "label": 0,
+      "n": 188
+    },
+    {
+      "source": "babe",
+      "split": "val",
+      "label": 1,
+      "n": 279
+    },
+    {
+      "source": "crows_pairs",
+      "split": "test",
+      "label": 0,
+      "n": 192
+    },
+    {
+      "source": "crows_pairs",
+      "split": "test",
+      "label": 1,
+      "n": 192
+    },
+    {
+      "source": "crows_pairs",
+      "split": "train",
+      "label": 0,
+      "n": 904
+    },
+    {
+      "source": "crows_pairs",
+      "split": "train",
+      "label": 1,
+      "n": 904
+    },
+    {
+      "source": "crows_pairs",
+      "split": "val",
+      "label": 0,
+      "n": 193
+    },
+    {
+      "source": "crows_pairs",
+      "split": "val",
+      "label": 1,
+      "n": 193
+    },
+    {
+      "source": "stereoset_inter",
+      "split": "test",
+      "label": 0,
+      "n": 320
+    },
+    {
+      "source": "stereoset_inter",
+      "split": "test",
+      "label": 1,
+      "n": 320
+    },
+    {
+      "source": "stereoset_inter",
+      "split": "train",
+      "label": 0,
+      "n": 1479
+    },
+    {
+      "source": "stereoset_inter",
+      "split": "train",
+      "label": 1,
+      "n": 1479
+    },
+    {
+      "source": "stereoset_inter",
+      "split": "val",
+      "label": 0,
+      "n": 324
+    },
+    {
+      "source": "stereoset_inter",
+      "split": "val",
+      "label": 1,
+      "n": 324
+    },
+    {
+      "source": "stereoset_intra",
+      "split": "test",
+      "label": 0,
+      "n": 315
+    },
+    {
+      "source": "stereoset_intra",
+      "split": "test",
+      "label": 1,
+      "n": 315
+    },
+    {
+      "source": "stereoset_intra",
+      "split": "train",
+      "label": 0,
+      "n": 1476
+    },
+    {
+      "source": "stereoset_intra",
+      "split": "train",
+      "label": 1,
+      "n": 1470
+    },
+    {
+      "source": "stereoset_intra",
+      "split": "val",
+      "label": 0,
+      "n": 309
+    },
+    {
+      "source": "stereoset_intra",
+      "split": "val",
+      "label": 1,
+      "n": 309
+    }
+  ],
+  "groups_spanning_splits": 0
+}
