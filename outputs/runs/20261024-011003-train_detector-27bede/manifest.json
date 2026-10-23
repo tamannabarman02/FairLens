@@ -1,0 +1,39 @@
+{
+  "run_id": "20261024-011003-train_detector-27bede",
+  "kind": "train_detector",
+  "status": "running",
+  "started_at": "2026-10-23T19:40:03+00:00",
+  "command": "train_detectors.py --model deberta --epochs 1 --max-train 320 --log-every 4 --out-suffix _speedtest",
+  "config": {
+    "detector": "deberta",
+    "base_model": "microsoft/deberta-v3-small",
+    "revision": "a36c739020e01763fe789b4b85e2df55d6180012",
+    "lr": 5e-05,
+    "epochs": 1,
+    "batch_size": 16,
+    "max_length": 128,
+    "n_train": 320,
+    "n_val": 2119,
+    "seed": 42
+  },
+  "seed": 42,
+  "git_commit": "2faa45b-dirty",
+  "datasets": {
+    "datasets\\processed\\detection.parquet": "7cbacdedf983ba1c"
+  },
+  "models": {},
+  "hardware": {
+    "python": "3.11.9",
+    "os": "Windows 10 (10.0.26200)",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cpu_threads": 12,
+    "ram_total_gb": 15.7,
+    "ram_available_gb": 3.0,
+    "disk_free_gb": 108.4,
+    "cuda": false,
+    "gpu_name": null,
+    "gpu_vram_gb": null,
+    "internet": false,
+    "torch_version": "2.14.1+cpu"
+  }
+}

@@ -73,6 +73,17 @@ textarea, input, [data-baseweb="select"] > div, [data-baseweb="input"] {
 .stTabs [data-baseweb="tab-highlight"] { background: var(--accent) !important; }
 .stTabs [aria-selected="true"] p { color: var(--accent) !important; }
 
+/* pills (example chips), segmented control */
+[data-testid="stBaseButton-pills"], [data-testid="stBaseButton-segmented_control"] {
+  background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--border) !important; }
+[data-testid="stBaseButton-pills"] *, [data-testid="stBaseButton-segmented_control"] * { color: var(--text) !important; }
+[data-testid="stBaseButton-pillsActive"], [data-testid="stBaseButton-segmented_controlActive"] {
+  background: var(--accent-soft) !important; border: 1px solid var(--accent) !important; }
+[data-testid="stBaseButton-pillsActive"] *, [data-testid="stBaseButton-segmented_controlActive"] * { color: var(--accent) !important; }
+/* toggle track visible in both themes */
+[data-testid="stCheckbox"] label > div:first-child, [data-baseweb="checkbox"] > div:first-child { background-color: var(--border) !important; }
+[data-baseweb="checkbox"]:has(input:checked) > div:first-child { background-color: var(--accent) !important; }
+
 /* expander, alerts, toggle, radio */
 [data-testid="stExpander"] { background: var(--surface); border: 1px solid var(--border) !important; border-radius: var(--radius) !important; }
 [data-testid="stExpander"] summary * { color: var(--text) !important; }
