@@ -24,7 +24,7 @@ from fairlens.mitigation.llm_adapters import build_rewriters  # noqa: E402
 from fairlens.models import manager  # noqa: E402
 
 VARIANTS = {
-    "V1_base": prompts.BASE_INSTRUCTION,
+    "V1_base": prompts.DEFAULT_INSTRUCTION,
     "V2_inclusive": "Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. "
                     "Keep all facts, names, numbers and negations exactly. Return only the rewritten text.",
     "V3_remove_bias": "Remove the stereotype or biased wording from this text and write a fair version with the same facts. "
@@ -41,8 +41,9 @@ def main(n: int = 30):
     sim = SemanticSimilarity()
     results, outputs = {}, {}
     rewriters = {k: v for k, v in build_rewriters().items() if k != "rule_based"}
-    for vname, instr in VARIANTS.items():
-        prompts.BASE_INSTRUCTION = instr
+    variants = {**{k: (v, False) for k, v in VARIANTS.items()}, **{k + "+demos": (v, True) for k, v in VARIANTS.items()}}
+    for vname, (instr, demos) in variants.items():
+        prompts.BASE_INSTRUCTION, prompts.USE_DEMOS = instr, demos
         for rname, rw in rewriters.items():
             manager().clear()
             outs = [rw.rewrite(t).text or "" for t in texts]
@@ -57,9 +58,9 @@ def main(n: int = 30):
                                            "mean_similarity": float(np.mean(sims)), "fact_keep_rate": float(np.mean(keep)),
                                            "rule_bias_drop": float(np.mean(drop)), "score": score}
             print(vname, rname, results[f"{vname}/{rname}"], flush=True)
-    per_variant = {v: float(np.mean([results[f"{v}/{r}"]["score"] for r in rewriters])) for v in VARIANTS}
+    per_variant = {v: float(np.mean([results[f"{v}/{r}"]["score"] for r in rewriters])) for v in variants}
     best = max(per_variant, key=per_variant.get)
-    out = {"chosen": best, "instruction": VARIANTS[best], "per_variant_score": per_variant, "results": results,
+    out = {"chosen": best, "instruction": variants[best][0], "use_demos": variants[best][1], "per_variant_score": per_variant, "results": results,
            "dev_sample": texts, "outputs": outputs, "n": len(texts),
            "note": "Development sample from the TRAIN split; the mitigation evaluation set was not used."}
     (ROOT / "configs" / "prompt_selection.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
