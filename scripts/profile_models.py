@@ -221,9 +221,19 @@ def main():
             # child output goes to a log file (no pipes, no inherited stdin): avoids stalls seen with captured pipes
             child_log = tracker.dir / f"child_{k.replace(':', '_').replace('+', '_')}.log"
             with open(child_log, "w", encoding="utf-8") as fh:
-                subprocess.run([sys.executable, __file__, "--child", k, "--n", str(a.n), "--steps", str(a.steps)],
-                               stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=ROOT, timeout=a.timeout,
-                               env={**os.environ, "HF_HUB_DISABLE_PROGRESS_BARS": "1", "TQDM_DISABLE": "1"})
+                proc = subprocess.Popen([sys.executable, __file__, "--child", k, "--n", str(a.n), "--steps", str(a.steps)],
+                                        stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=ROOT,
+                                        env={**os.environ, "HF_HUB_DISABLE_PROGRESS_BARS": "1", "TQDM_DISABLE": "1"})
+                try:
+                    proc.wait(timeout=a.timeout)
+                except subprocess.TimeoutExpired:
+                    # On Windows a venv python.exe is a launcher with the real interpreter as its child: kill the tree.
+                    import psutil
+
+                    for c in psutil.Process(proc.pid).children(recursive=True):
+                        c.kill()
+                    proc.kill()
+                    raise
             text = child_log.read_text(encoding="utf-8", errors="replace")
             line = next((l for l in text.splitlines() if l.startswith("@@RESULT@@")), None)
             rec = json.loads(line[10:]) if line else {"status": "failed", "error": text[-600:]}
