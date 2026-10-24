@@ -115,10 +115,9 @@ def accelerator_selfcheck(dev: str, tol: float = 1e-3) -> dict:
     On a GitHub macOS (virtualised) runner, MPS reported available but every encoder/decoder model except T5
     produced different outputs from CPU (outputs/audit/ci_device_families/). A device that fails this check is
     not used automatically. FAIRLENS_SKIP_SELFCHECK=1 disables the check."""
+    if os.environ.get("FAIRLENS_SKIP_SELFCHECK") == "1":  # checked before the cache so diagnostics can force a raw device
+        return {"ok": True, "skipped": True}
     if dev in _SELFCHECK:
-        return _SELFCHECK[dev]
-    if os.environ.get("FAIRLENS_SKIP_SELFCHECK") == "1":
-        _SELFCHECK[dev] = {"ok": True, "skipped": True}
         return _SELFCHECK[dev]
     import torch
 

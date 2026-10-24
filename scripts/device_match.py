@@ -57,7 +57,9 @@ def run_on(dev: str, texts: list[str]) -> dict:
     diag["_hidden_first"] = [h[0].float().cpu().numpy().tolist() for h in hs]
     rw = Seq2SeqRewriter("flan", "FLAN-T5-small", REWRITER)
     outs = [rw.rewrite(t).text for t in texts[:10]]
-    return {"scores": scores, "rewrites": outs, "diag": diag}
+    from fairlens.hardware import device as _dev
+    assert _dev() == dev, f"requested {dev} but ran on {_dev()}"  # never compare a device with itself by accident
+    return {"scores": scores, "rewrites": outs, "diag": diag, "ran_on": _dev()}
 
 
 def main():
