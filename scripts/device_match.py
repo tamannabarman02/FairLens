@@ -49,6 +49,11 @@ def run_on(dev: str, texts: list[str]) -> dict:
         with torch.inference_mode():
             ev += torch.softmax(eager(**enc).logits.float(), -1)[:, 1].cpu().tolist()
     diag["eager_batch16"] = ev
+    # layer-by-layer hidden states for the first sentence (compared across devices by the caller)
+    enc = to_model(tok(texts[:1], return_tensors="pt"), eager)
+    with torch.inference_mode():
+        hs = eager(**enc, output_hidden_states=True).hidden_states
+    diag["_hidden_first"] = [h[0].float().cpu().numpy().tolist() for h in hs]
     rw = Seq2SeqRewriter("flan", "FLAN-T5-small", REWRITER)
     outs = [rw.rewrite(t).text for t in texts[:10]]
     return {"scores": scores, "rewrites": outs, "diag": diag}
@@ -73,7 +78,14 @@ def main():
             continue
         diffs = [abs(x - y) for x, y in zip(res[d]["scores"], cpu["scores"])]
         same = [x == y for x, y in zip(res[d]["rewrites"], cpu["rewrites"])]
-        diag = {k: max(abs(x - y) for x, y in zip(res[d]["diag"][k], cpu["scores"])) for k in res[d]["diag"]}
+        import numpy as np
+
+        diag = {k: max(abs(x - y) for x, y in zip(res[d]["diag"][k], cpu["scores"])) for k in res[d]["diag"] if not k.startswith("_")}
+        diag["n_scores_over_tol"] = sum(x > SCORE_TOL for x in diffs)
+        diag["score_pairs_worst5"] = sorted(([round(x, 4), round(y, 4), len(t.split())] for x, y, t in
+                                             zip(res[d]["scores"], cpu["scores"], texts)), key=lambda r: -abs(r[0] - r[1]))[:5]
+        diag["hidden_max_abs_diff_by_layer"] = [float(np.max(np.abs(np.array(a) - np.array(b)))) for a, b in
+                                                zip(res[d]["diag"]["_hidden_first"], cpu["diag"]["_hidden_first"])]
         diag["cpu_batch1_vs_cpu_batch16"] = max(abs(x - y) for x, y in zip(cpu["diag"]["batch1"], cpu["scores"]))
         cmp[d] = {"max_abs_score_diff": max(diffs), "score_within_tol": max(diffs) <= SCORE_TOL, "diagnostics_vs_cpu": diag,
                   "rewrite_identical_rate": sum(same) / len(same),
@@ -84,6 +96,8 @@ def main():
            "note": "Only CPU available on this machine; nothing to compare." if not cmp else ""}
     p = Path(a.out) if a.out else ROOT / "outputs" / "audit" / f"device_match_{sys.platform}.json"
     p.parent.mkdir(parents=True, exist_ok=True)
+    for r in res.values():
+        r["diag"].pop("_hidden_first", None)
     p.write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in out.items() if k != "comparison_vs_cpu"}, indent=1))
     print(json.dumps(cmp, indent=1)[:2000])
