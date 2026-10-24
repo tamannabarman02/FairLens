@@ -21,7 +21,12 @@ jobs:
         run: bash install.sh
       - name: Compare devices
         run: .venv/bin/python scripts/device_match.py --out device_match_macos.json
+      - name: Compare model families
+        run: .venv/bin/python scripts/device_families.py --out device_families_macos.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: device-match-macos
-          path: device_match_macos.json
+          path: |
+            device_match_macos.json
+            device_families_macos.json

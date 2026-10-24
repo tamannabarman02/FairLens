@@ -1,0 +1,73 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "devices": [
+    "mps",
+    "cpu"
+  ],
+  "detector": "himel7/bias-detector",
+  "rewriter": "google/flan-t5-small",
+  "tolerance": {
+    "score_abs": 0.001,
+    "rewrite": "identical text"
+  },
+  "n_detector": 50,
+  "n_rewriter": 10,
+  "comparison_vs_cpu": {
+    "mps": {
+      "max_abs_score_diff": 0.6443045735359192,
+      "score_within_tol": false,
+      "diagnostics_vs_cpu": {
+        "batch1": 0.6443700790405273,
+        "eager_batch16": 0.6443047225475311,
+        "n_scores_over_tol": 50,
+        "score_pairs_worst5": [
+          [
+            0.3392,
+            0.9835,
+            11
+          ],
+          [
+            0.9436,
+            0.3345,
+            36
+          ],
+          [
+            0.4557,
+            0.9722,
+            24
+          ],
+          [
+            0.3602,
+            0.8029,
+            7
+          ],
+          [
+            0.1809,
+            0.6198,
+            48
+          ]
+        ],
+        "hidden_max_abs_diff_by_layer": [
+          9.5367431640625e-07,
+          3.7251157760620117,
+          2.252739906311035,
+          3.3646621704101562,
+          3.746462821960449,
+          4.881401062011719,
+          6.754050254821777,
+          5.139560699462891,
+          6.041767120361328,
+          8.000055313110352,
+          5.804319381713867,
+          3.572580337524414,
+          3.825267791748047
+        ],
+        "cpu_batch1_vs_cpu_batch16": 2.3245811462402344e-06
+      },
+      "rewrite_identical_rate": 1.0,
+      "rewrite_mismatches": []
+    }
+  },
+  "passed": false,
+  "note": ""
+}
