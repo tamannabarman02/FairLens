@@ -1,0 +1,25 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "devices": [
+    "mps",
+    "cpu"
+  ],
+  "detector": "himel7/bias-detector",
+  "rewriter": "google/flan-t5-small",
+  "tolerance": {
+    "score_abs": 0.001,
+    "rewrite": "identical text"
+  },
+  "n_detector": 50,
+  "n_rewriter": 10,
+  "comparison_vs_cpu": {
+    "mps": {
+      "max_abs_score_diff": 0.6443045735359192,
+      "score_within_tol": false,
+      "rewrite_identical_rate": 1.0,
+      "rewrite_mismatches": []
+    }
+  },
+  "passed": false,
+  "note": ""
+}

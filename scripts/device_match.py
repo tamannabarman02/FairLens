@@ -32,9 +32,26 @@ def run_on(dev: str, texts: list[str]) -> dict:
     set_manager(ModelManager(max_resident_mb=10_000))
     d = HFClassifierDetector("hub", "Hub", DETECTOR, biased_label_ids=[1])
     scores = [r.score for r in d.predict_batch(texts, batch_size=16)]
+    diag = {"batch1": [r.score for r in d.predict_batch(texts, batch_size=1)]}
+    # diagnostic: same model with eager attention (rules out fused-SDPA padding issues on MPS)
+    import torch
+    from transformers import AutoModelForSequenceClassification
+
+    from fairlens.config import pinned_revision
+    from fairlens.hardware import place, to_model
+
+    tok, _ = d._load()
+    eager = place(AutoModelForSequenceClassification.from_pretrained(DETECTOR, revision=pinned_revision(DETECTOR),
+                                                                     attn_implementation="eager").eval())
+    ev = []
+    for i in range(0, len(texts), 16):
+        enc = to_model(tok(texts[i:i + 16], padding=True, truncation=True, max_length=128, return_tensors="pt"), eager)
+        with torch.inference_mode():
+            ev += torch.softmax(eager(**enc).logits.float(), -1)[:, 1].cpu().tolist()
+    diag["eager_batch16"] = ev
     rw = Seq2SeqRewriter("flan", "FLAN-T5-small", REWRITER)
     outs = [rw.rewrite(t).text for t in texts[:10]]
-    return {"scores": scores, "rewrites": outs}
+    return {"scores": scores, "rewrites": outs, "diag": diag}
 
 
 def main():
@@ -56,7 +73,9 @@ def main():
             continue
         diffs = [abs(x - y) for x, y in zip(res[d]["scores"], cpu["scores"])]
         same = [x == y for x, y in zip(res[d]["rewrites"], cpu["rewrites"])]
-        cmp[d] = {"max_abs_score_diff": max(diffs), "score_within_tol": max(diffs) <= SCORE_TOL,
+        diag = {k: max(abs(x - y) for x, y in zip(res[d]["diag"][k], cpu["scores"])) for k in res[d]["diag"]}
+        diag["cpu_batch1_vs_cpu_batch16"] = max(abs(x - y) for x, y in zip(cpu["diag"]["batch1"], cpu["scores"]))
+        cmp[d] = {"max_abs_score_diff": max(diffs), "score_within_tol": max(diffs) <= SCORE_TOL, "diagnostics_vs_cpu": diag,
                   "rewrite_identical_rate": sum(same) / len(same),
                   "rewrite_mismatches": [{"cpu": c, d: o} for c, o, s in zip(cpu["rewrites"], res[d]["rewrites"], same) if not s]}
     out = {"platform": platform.platform(), "devices": devs, "detector": DETECTOR, "rewriter": REWRITER,
