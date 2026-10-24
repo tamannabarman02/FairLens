@@ -1,0 +1,8 @@
+{
+  "id": "benchmarking",
+  "kind": "benchmark",
+  "title": "AI model testing and benchmarking",
+  "input": "Compare BERT, DeBERTa, BART-MNLI and the rule baseline on the shared test split (see Model Comparison).",
+  "computed_at": "2026-10-24 07:14",
+  "summary": "Rule-based: macro-F1 0.354, FPR 0.03, 0 ms/sample; BERT: macro-F1 0.777, FPR 0.26, 3 ms/sample; DeBERTa: macro-F1 0.814, FPR 0.20, 5 ms/sample; BART-MNLI: macro-F1 0.611, FPR 0.45, 48 ms/sample; Hub pretrained: macro-F1 0.646, FPR 0.26, 5 ms/sample (run 20261024-043227-benchmark_detection-a4a61f)"
+}

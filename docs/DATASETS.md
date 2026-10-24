@@ -10,7 +10,7 @@ each measures a different thing, so results are always reported per source as we
 |---|---|---|---|---|
 | **BABE** (Spinde et al., 2021), HF `mediabiasgroup/BABE` | CC BY-NC-SA 4.0 (per paper; HF card has no licence field) | Expert-annotated **media bias / loaded framing** at sentence level in US news, plus biased-word spans | `label` 1 = biased, 0 = non-biased; `bias_type = media_framing`. Official train/test split kept; 15% of train -> val (seeded) | US political news only; framing bias, not social stereotypes; non-commercial licence |
 | **StereoSet** (Nadeem et al., 2021), HF `McGill-NLP/stereoset` (validation = public labelled split) | CC BY-SA 4.0 | Stereotype vs anti-stereotype vs unrelated continuations (intra- and inter-sentence) for gender, race, religion, profession | stereotype -> 1, anti-stereotype -> 0; *unrelated* excluded from training (often nonsensical, e.g. "The chess player was fox."), kept for a probe. Inter-sentence text = context + sentence. Both members of an item stay in the same split | Anti-stereotypes are often still generalisations ("The people are fat and unathletic"); some "stereotypes" are mild; known annotation noise (Blodgett et al., 2021) |
-| **CrowS-Pairs** (Nangia et al., 2020), GitHub `nyu-mll/crows-pairs` | CC BY-SA 4.0 | Minimal pairs: a sentence that is more stereotypical vs a less stereotypical counterpart, 9 bias types | Only `stereo`-direction pairs (1,290) go into the detection set: `sent_more` -> 1, `sent_less` -> 0 (same pair, same split). All 1,508 pairs kept as a pairwise-preference probe | Originally an MLM-likelihood benchmark; using it as classification labels is an adaptation. `sent_less` often repeats the same generalisation about a different group; documented validity problems (Blodgett et al., 2021) |
+| **CrowS-Pairs** (Nangia et al., 2020), GitHub `nyu-mll/crows-pairs` | CC BY-SA 4.0 | Minimal pairs: a sentence that is more stereotypical vs a less stereotypical counterpart, 9 bias types | Only `stereo`-direction pairs (1,290; 1,289 after de-duplication) go into the detection set: `sent_more` -> 1, `sent_less` -> 0 (same pair, same split). All 1,508 pairs kept as a pairwise-preference probe | Originally an MLM-likelihood benchmark; using it as classification labels is an adaptation. `sent_less` often repeats the same generalisation about a different group; documented validity problems (Blodgett et al., 2021) |
 | **WinoBias** (Zhao et al., 2018), HF `uclanlp/wino_bias` | MIT | Gender-occupation coreference with pro- and anti-stereotypical pronouns | **Probe only, never training data.** All 1,584 sentences are neutral event descriptions, so any flag is a false positive; we also report the score gap pro − anti | Coreference benchmark, not a biased-language corpus |
 | **WNC** (Wiki Neutrality Corpus, Pryzant et al., 2020) | (CC BY-SA) | Biased -> neutralised Wikipedia edits (parallel) | **Not used: blocked.** The Stanford download host did not respond and the only HF mirror (`reza-alipour/WNC`) is gated (manual approval). BABE substitutes as the sentence-level biased-language corpus | Its absence means no large human-written parallel rewrite corpus is available; see references below |
 | **COCO 2017 val** (Lin et al., 2014) | Annotations CC BY 4.0; images under per-image Flickr licences (recorded per image) | Image captioning; 5 human reference captions per image | 60 images with the `person` category + 20 without (seeded), used for the captioning experiment. Metadata is used only to select/describe the set; no demographic inference | Western-centric photo distribution; reference captions themselves contain gendered wording |
@@ -65,6 +65,34 @@ Example chips and Use-Case inputs for the dashboard. **Never used for any metric
 ## 6. Prompt-development sample
 `scripts/select_prompts.py` uses 30 biased sentences from the **train** split to choose the shared prompt
 variant; the evaluation set is never used for prompt choice.
+
+## 7. Label compatibility (what `label` means per source)
+
+Checked against `scripts/build_datasets.py` and the built parquet files (`python scripts/verify_data_manifest.py`,
+2026-10-24). The unified `label` column is binary everywhere, but the native annotation behind it differs, so a
+score is only comparable **within** a source. Pooled numbers are a convenience, never the headline.
+
+| Source (`source`) | Native label | Mapping to unified `label` | Unit | Valid for |
+|---|---|---|---|---|
+| BABE (`babe`) | Expert sentence label in the BABE `label` column (1 = biased, 0 = non-biased), plus a `biased_words` span list | Copied as-is (`int(r.label)`), `bias_type = media_framing`. Consistency check on the parquet: 1,705 of 1,845 rows with a non-empty `biased_words` list are label 1 | Single sentence, one row per BABE uuid (4,118 groups, all of size 1) | Sentence classification (macro-F1, FPR, ECE, ROC-AUC) |
+| StereoSet intra (`stereoset_intra`) | Gold label per candidate fill-in: stereotype / anti-stereotype / unrelated | stereotype -> 1, anti-stereotype -> 0; unrelated dropped from `detection.parquet` (kept in `stereoset_pairs.parquet`) | Minimal triple: same context, one blank filled three ways. 2,094 complete pairs + 6 groups with only the anti-stereotype left after de-duplication; 6 of the 2,106 items lost both members | Pairwise preference (stereotype vs anti-stereotype, stereotype vs unrelated) on `stereoset_pairs.parquet`. As classification only with the caveat that label 0 means "anti-stereotype", which is often still a generalisation, not "unbiased" |
+| StereoSet inter (`stereoset_inter`) | Same three-way gold label on the continuation sentence | Same mapping; `text` = context + continuation | Minimal triple (context shared). All 2,123 items kept as complete pairs | Same as intra |
+| CrowS-Pairs (`crows_pairs`) | Pair of sentences differing in the group mentioned, with direction `stereo` (sent_more is the stereotype) or `antistereo` (sent_more violates a stereotype) | Detection set uses only `stereo` pairs: `sent_more` -> 1, `sent_less` -> 0. 1,289 of the 1,290 stereo pairs survive de-duplication. `antistereo` pairs (218) appear only in `crows_pairs.parquet` | Minimal pair (one group term swapped) | Pairwise preference (share of pairs where `sent_more` scores higher, per direction). Classification use is an adaptation: `sent_less` frequently states the same generalisation about another group, so label 0 is "less stereotypical", not "neutral" |
+| WinoBias (`winobias_probe.parquet`) | Coreference condition: pro- vs anti-stereotypical pronoun-occupation link (type1/type2) | Every sentence gets `label = 0`; `condition` keeps pro/anti | Sentence, paired by `pair_index` within (type, condition); 4 x 396 = 1,584 rows | Probe only: false-positive rate per condition and the pro-minus-anti score gap. Never training data, never classification precision/recall (there are no positives) |
+
+Consequences for metrics:
+- Classification metrics are meaningful per source on BABE, and with the caveats above on StereoSet and
+  CrowS-Pairs: there, label 0 is the less stereotypical member of a pair, not a neutral sentence, so a "false
+  positive" may be a correct reading of a generalisation. Report the pairwise preference alongside F1 for these
+  sources.
+- Pairwise preference is valid only for StereoSet and CrowS-Pairs (minimal pairs). It is undefined for BABE.
+- WinoBias supports only FPR and score-gap probes.
+- De-duplication (priority test > val > train) removed 23 rows: 2 from CrowS-Pairs (one whole pair) and 18 from
+  StereoSet intra (6 whole items plus one member of 6 others); the remaining 3 are BABE rows (by subtraction).
+  It never moves a group between splits: 0 groups and 0 identical texts span splits, and every CrowS/StereoSet
+  probe pair has the same split as its rows in `detection.parquet`.
+- The 140 benchmark sentences in `mitigation_eval.parquet` are all found in the **test** split of
+  `detection.parquet` (0 from train/val).
 
 ## References
 Spinde et al. 2021 (BABE, Findings of EMNLP); Nadeem et al. 2021 (StereoSet, ACL); Nangia et al. 2020 (CrowS-Pairs, EMNLP);

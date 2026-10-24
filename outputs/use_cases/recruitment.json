@@ -1,0 +1,674 @@
+{
+  "id": "recruitment",
+  "kind": "text",
+  "title": "Recruitment and job-text review",
+  "input": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+  "computed_at": "2026-10-24 07:13",
+  "analysis": {
+    "text": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+    "detector_results": {
+      "bert": {
+        "detector": "bert",
+        "display": "BERT",
+        "score": 0.8374309539794922,
+        "label": "biased",
+        "runtime_ms": 4071.894874999998,
+        "error": null
+      },
+      "deberta": {
+        "detector": "deberta",
+        "display": "DeBERTa",
+        "score": 0.7570327520370483,
+        "label": "biased",
+        "runtime_ms": 1160.208542001783,
+        "error": null
+      },
+      "bart_mnli": {
+        "detector": "bart_mnli",
+        "display": "BART-MNLI",
+        "score": 0.9887697696685791,
+        "label": "biased",
+        "runtime_ms": 2070.3725409985054,
+        "error": null
+      },
+      "rule_based": {
+        "detector": "rule_based",
+        "display": "Rule-based",
+        "score": 0.6132500000000001,
+        "label": "biased",
+        "runtime_ms": 8.246249999501742,
+        "error": null,
+        "categories": {
+          "age": 0.3,
+          "gender": 0.35
+        }
+      }
+    },
+    "ensemble_score": 0.7991208689212799,
+    "level": "High",
+    "spans": [
+      {
+        "start": 14,
+        "end": 19,
+        "text": "young",
+        "category": "age",
+        "explanation": "Age-coded wording; can signal preference for or against an age group.",
+        "weight": 0.3
+      },
+      {
+        "start": 21,
+        "end": 31,
+        "text": "aggressive",
+        "category": "gender",
+        "explanation": "Gender-coded trait word (common in job adverts).",
+        "weight": 0.15
+      },
+      {
+        "start": 32,
+        "end": 40,
+        "text": "salesman",
+        "category": "gender",
+        "explanation": "Gender-marked term where a neutral alternative exists.",
+        "weight": 0.35
+      }
+    ],
+    "categories": [
+      {
+        "category": "gender",
+        "phrases": [
+          "aggressive",
+          "salesman"
+        ],
+        "explanation": "Gender-coded trait word (common in job adverts).",
+        "weight": 0.35
+      },
+      {
+        "category": "age",
+        "phrases": [
+          "young"
+        ],
+        "explanation": "Age-coded wording; can signal preference for or against an age group.",
+        "weight": 0.3
+      }
+    ],
+    "sentences": [
+      {
+        "text": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+        "start": 0,
+        "end": 90,
+        "scores": {
+          "bert": 0.8374309539794922,
+          "deberta": 0.7570327520370483,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        }
+      }
+    ],
+    "runtime_ms": 7524.578458003816,
+    "missing_detectors": []
+  },
+  "mitigation": {
+    "original": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+    "decision": {
+      "decision": "ACCEPT",
+      "chosen": "rule_based",
+      "chosen_text": "Looking for a proactive salesperson with 5 years of experience in B2B software sales.",
+      "reason_code": "ALL_CHECKS_PASSED",
+      "reason": "Bias reduced and meaning, facts and fluency preserved.",
+      "verdicts": [
+        {
+          "candidate": "original",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "rule_based",
+          "decision": "ACCEPT",
+          "reasons": [
+            "ALL_CHECKS_PASSED"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": true,
+            "RESIDUAL_BIAS": true,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "flan_t5",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "qwen",
+          "decision": "REJECT",
+          "reasons": [
+            "CONTRADICTION"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": false,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": true,
+            "RESIDUAL_BIAS": true,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        }
+      ],
+      "input_biased": true,
+      "attempts": 0
+    },
+    "candidates": [
+      {
+        "candidate": "original",
+        "text": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+        "changed": false,
+        "bias_before": 0.799121032834053,
+        "bias_after": 0.799121032834053,
+        "bias_reduction": 0.0,
+        "detector_scores_before": {
+          "bert": 0.8374310731887817,
+          "deberta": 0.7570332884788513,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        },
+        "detector_scores_after": {
+          "bert": 0.8374310731887817,
+          "deberta": 0.7570332884788513,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        },
+        "detector_std": 0.13578818215019547,
+        "confidence_margin": 0.598242065668106,
+        "uncertainty": 0.3366671493161425,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "entailment_both_ways": 1.0,
+        "contradiction": 0.0,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "5"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "5 years"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "salesperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "rule_based",
+        "text": "Looking for a proactive salesperson with 5 years of experience in B2B software sales.",
+        "changed": true,
+        "bias_before": 0.799121032834053,
+        "bias_after": 0.3046838480513543,
+        "bias_reduction": 0.4944371847826987,
+        "detector_scores_before": {
+          "bert": 0.8374310731887817,
+          "deberta": 0.7570332884788513,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        },
+        "detector_scores_after": {
+          "bert": 0.25907352566719055,
+          "deberta": 0.013433183543384075,
+          "bart_mnli": 0.9462286829948425,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.38448643460802684,
+        "confidence_margin": 0.3906323038972914,
+        "uncertainty": 0.6891702826593811,
+        "semantic_similarity": 0.8472639918327332,
+        "entail_forward": 0.968312680721283,
+        "entail_backward": 0.0013338944409042597,
+        "entailment_both_ways": 0.0013338944409042597,
+        "contradiction": 0.0007687019533477724,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "5"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "5 years"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "salesperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 0.9333333333333333,
+        "verdict": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "flan_t5",
+        "text": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+        "changed": false,
+        "bias_before": 0.799121032834053,
+        "bias_after": 0.799121032834053,
+        "bias_reduction": 0.0,
+        "detector_scores_before": {
+          "bert": 0.8374310731887817,
+          "deberta": 0.7570332884788513,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        },
+        "detector_scores_after": {
+          "bert": 0.8374310731887817,
+          "deberta": 0.7570332884788513,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        },
+        "detector_std": 0.13578818215019547,
+        "confidence_margin": 0.598242065668106,
+        "uncertainty": 0.3366671493161425,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "entailment_both_ways": 1.0,
+        "contradiction": 0.0,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "5"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "5 years"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "salesperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "qwen",
+        "text": "Looking for an energetic and experienced B2B software salesperson with five years of experience.",
+        "changed": true,
+        "bias_before": 0.799121032834053,
+        "bias_after": 0.25271294079720974,
+        "bias_reduction": 0.5464080920368433,
+        "detector_scores_before": {
+          "bert": 0.8374310731887817,
+          "deberta": 0.7570332884788513,
+          "bart_mnli": 0.9887697696685791,
+          "rule_based": 0.6132500000000001
+        },
+        "detector_scores_after": {
+          "bert": 0.03679066151380539,
+          "deberta": 0.01667526364326477,
+          "bart_mnli": 0.9573858380317688,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.4070515748251356,
+        "confidence_margin": 0.4945741184055805,
+        "uncertainty": 0.6597645156223453,
+        "semantic_similarity": 0.8607555627822876,
+        "entail_forward": 0.9799759387969971,
+        "entail_backward": 0.005697314161807299,
+        "entailment_both_ways": 0.005697314161807299,
+        "contradiction": 0.9685521721839905,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "5"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "5 years"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "salesperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 0.9333333333333333,
+        "verdict": "REJECT",
+        "reasons": [
+          "CONTRADICTION"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": false,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      }
+    ],
+    "rewrite_log": [
+      {
+        "rewriter": "rule_based",
+        "text": "Looking for a proactive salesperson with 5 years of experience in B2B software sales.",
+        "runtime_ms": 2.0688329968834296,
+        "prompt": null,
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      },
+      {
+        "rewriter": "flan_t5",
+        "text": "Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.",
+        "runtime_ms": 1673.2967080024537,
+        "prompt": "Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. Keep all facts, names, numbers and negations exactly. Return only the rewritten text. \n\nText: Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.\nRewritten text:",
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      },
+      {
+        "rewriter": "qwen",
+        "text": "Looking for an energetic and experienced B2B software salesperson with five years of experience.",
+        "runtime_ms": 1490.956042005564,
+        "prompt": "<|im_start|>system\nYou are a careful editor who removes bias from text without changing its facts. Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. Keep all facts, names, numbers and negations exactly. Return only the rewritten text.<|im_end|>\n<|im_start|>user\nText: Looking for a young, aggressive salesman with 5 years of experience in B2B software sales.<|im_end|>\n<|im_start|>assistant\n",
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      }
+    ],
+    "lowest_bias_choice": "qwen",
+    "runtime_ms": 11163.38141700544
+  },
+  "bias_score": 0.7991208689212799,
+  "decision": {
+    "decision": "ACCEPT",
+    "chosen": "rule_based",
+    "chosen_text": "Looking for a proactive salesperson with 5 years of experience in B2B software sales.",
+    "reason_code": "ALL_CHECKS_PASSED",
+    "reason": "Bias reduced and meaning, facts and fluency preserved.",
+    "verdicts": [
+      {
+        "candidate": "original",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "rule_based",
+        "decision": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "flan_t5",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "qwen",
+        "decision": "REJECT",
+        "reasons": [
+          "CONTRADICTION"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": false,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      }
+    ],
+    "input_biased": true,
+    "attempts": 0
+  },
+  "must_preserve_check": {
+    "5 years": true,
+    "B2B software sales": true
+  }
+}

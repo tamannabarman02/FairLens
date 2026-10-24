@@ -27,6 +27,9 @@ ICONS = {  # lucide-style outline icons (24x24 viewBox)
     "eye": '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     "info": '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
     "alert": '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+    "upload": '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+    "file": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>',
+    "cpu": '<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
     "inbox": '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/>',
 }
 
@@ -114,28 +117,28 @@ def score_bar(label: str, score: float | None, right: str = "", tone: str | None
     val = "n/a" if score is None else f"{score:.2f}"
     return (f'<div class="fl-bar"><div class="row"><span>{esc(label)}</span><span class="meta">{right}<b>{val}</b></span></div>'
             f'<div class="track"><div class="fill {tone}" style="width:{pct:.1f}%"></div></div>'
-            f'{f"<div class=fl-sub style=font-size:12px;margin-top:4px>{sub}</div>" if sub else ""}</div>')
+            f'{f"<div class=fl-caption>{sub}</div>" if sub else ""}</div>')
 
 
 def decision_banner(decision: str, reason: str, sub: str = "") -> str:
     ic = {"ACCEPT": "check", "REJECT": "x", "RETRY": "refresh", "HUMAN_REVIEW": "user"}.get(decision, "info")
     return (f'<div class="fl-banner {decision}"><div class="icon">{icon(ic, 24, "#fff", 2.5)}</div><div>'
             f'<div class="ttl">{esc(DECISION_LABEL.get(decision, decision))}</div><div class="why">{esc(reason)}</div>'
-            f'{f"<div class=fl-sub style=font-size:12.5px;margin-top:4px>{sub}</div>" if sub else ""}</div></div>')
+            f'{f"<div class=fl-caption>{sub}</div>" if sub else ""}</div></div>')
 
 
 def pipeline_cards(steps: list[tuple[str, str, str]]) -> str:
     """steps: (icon, title, description)."""
     out = []
     for i, (ic, t, d) in enumerate(steps):
-        out.append(f'<div class="fl-pipe"><div class="fl-icon" style="margin:0">{icon(ic)}</div><div class="t">{esc(t)}</div><div class="d">{esc(d)}</div></div>')
+        out.append(f'<div class="fl-pipe"><div class="fl-icon flat">{icon(ic)}</div><div class="t">{esc(t)}</div><div class="d">{esc(d)}</div></div>')
         if i < len(steps) - 1:
             out.append('<div class="fl-arrow">&rarr;</div>')
     return f'<div class="fl-pipeline">{"".join(out)}</div>'
 
 
 def empty_state(title: str, text: str, icon_name: str = "inbox") -> str:
-    return (f'<div class="fl-empty"><div class="fl-icon" style="margin:0 auto">{icon(icon_name)}</div>'
+    return (f'<div class="fl-empty"><div class="fl-icon center">{icon(icon_name)}</div>'
             f'<div class="ttl">{esc(title)}</div><div class="txt">{text}</div></div>')
 
 
@@ -183,19 +186,45 @@ def check_grid(items: list[tuple[str, bool | None, str]]) -> str:
     return f'<div class="fl-checks">{"".join(cells)}</div>'
 
 
+METRIC_HELP = {
+    "Macro-F1": "Unweighted mean of the F1 score for the biased and the neutral class (higher is better).",
+    "F1": "Harmonic mean of precision and recall for the biased class.",
+    "Precision": "Of the sentences flagged as biased, the share that really are biased.",
+    "Recall": "Of the truly biased sentences, the share that were flagged.",
+    "ROC-AUC": "Probability that a random biased sentence scores higher than a random neutral one (0.5 = chance).",
+    "PR-AUC": "Area under the precision-recall curve for the biased class.",
+    "ECE": "Expected calibration error: gap between predicted probability and observed frequency (10 bins, lower is better).",
+    "Brier": "Mean squared error of the predicted probability (lower is better).",
+    "FPR": "False positive rate: share of neutral sentences wrongly flagged.",
+    "F1 [95% CI]": "F1 with a 95% bootstrap confidence interval over test sentences.",
+    "Unsafe accept": "Share of candidates the Gate accepted although their gold label is not acceptable (lower is better).",
+    "3-class macro-F1": "Macro-F1 of the Gate's ACCEPT / RETRY / REJECT decisions against gold labels.",
+    "Accept precision": "Of the candidates the Gate accepted, the share that are gold-acceptable.",
+    "Accept recall": "Of the gold-acceptable candidates, the share the Gate accepted.",
+    "Human review": "Share of candidates sent to a person.",
+    "Bias reduction": "Mean drop in the ensemble bias score on biased inputs.",
+    "Similarity": "Cosine similarity of sentence embeddings between original and rewrite.",
+    "Fact retention": "Share of names, numbers, dates, roles, quotes and negation polarity kept by the rewrite.",
+    "Fluency": "Heuristic sanity score: repetition, prompt leakage, garbage characters.",
+    "ms / sample": "Mean inference time per sentence on this machine (CPU).",
+}
+
+
 def html_table(rows: list[dict], columns: list[str] | None = None, best: dict[str, str] | None = None,
-               fmt: dict[str, str] | None = None, raw: set[str] | None = None) -> str:
-    """best: {column: 'max'|'min'} highlights the best value; raw: columns already containing HTML."""
+               fmt: dict[str, str] | None = None, raw: set[str] | None = None, tips: dict[str, str] | None = None) -> str:
+    """best: {column: 'max'|'min'} highlights the best value; raw: columns already containing HTML;
+    tips: header tooltips (defaults to METRIC_HELP for known metric names)."""
     if not rows:
         return ""
     columns = columns or list(rows[0])
     fmt, raw, best = fmt or {}, raw or set(), best or {}
+    tips = {**METRIC_HELP, **(tips or {})}
     bests = {}
     for c, how in best.items():
         vals = [r.get(c) for r in rows if isinstance(r.get(c), (int, float))]
         if vals:
             bests[c] = max(vals) if how == "max" else min(vals)
-    head = "".join(f"<th>{esc(c)}</th>" for c in columns)
+    head = "".join(f"<th>{esc(c)} {help_dot(tips[c]) if c in tips else ''}</th>" for c in columns)
     body = []
     for r in rows:
         tds = []
@@ -219,3 +248,47 @@ def note(text: str, kind: str = "note") -> str:
 
 def kv(pairs: list[tuple[str, str]]) -> str:
     return '<div class="fl-kv">' + "".join(f'<div class="k">{esc(k)}</div><div class="v">{esc(v)}</div>' for k, v in pairs) + "</div>"
+
+
+def section(title: str, tip: str = "") -> None:
+    """Consistent section heading (replaces ad-hoc st.markdown('##### ...'))."""
+    render(f'<div class="fl-section">{esc(title)}{help_dot(tip) if tip else ""}</div>')
+
+
+def caption(text: str) -> str:
+    return f'<div class="fl-caption">{text}</div>'
+
+
+def gap(large: bool = False) -> None:
+    render(f'<div class="{"fl-gap-lg" if large else "fl-gap"}"></div>')
+
+
+STATUS_CLASS = {"Completed run": "completed", "Pending": "pending", "Failed run": "failed", "Illustrative example": "illustrative"}
+STATUS_HELP = {
+    "Completed run": "Read from a finished run in outputs/runs/ (manifest status: completed).",
+    "Pending": "No completed run exists yet, or one is still in progress. Nothing is shown until it finishes.",
+    "Failed run": "The run failed or was stopped before finishing; its outputs are not shown as results.",
+    "Illustrative example": "A worked example to explain the method, not a benchmark result.",
+}
+
+
+def status_badge(label: str) -> str:
+    return f'<span class="fl-status {STATUS_CLASS.get(label, "pending")}" title="{esc(STATUS_HELP.get(label, ""))}">{esc(label)}</span>'
+
+
+def provenance(title: str, status: str, pairs: list[tuple[str, str]], note_html: str = "") -> str:
+    """Result header: one status label plus run ID, models + revisions, dataset version and key config."""
+    body = kv(pairs) if pairs else ""
+    extra = f'<div class="fl-caption">{note_html}</div>' if note_html else ""
+    return (f'<div class="fl-prov"><div class="hd"><span class="t">{esc(title)}</span>{status_badge(status)}</div>'
+            f'{body}{extra}</div>')
+
+
+def entry_card(icon_name: str, title: str, desc: str, primary: bool = False) -> str:
+    return (f'<div class="fl-entry {"primary" if primary else ""}"><div class="hd"><div class="fl-icon">{icon(icon_name, 18)}</div>'
+            f'<div class="t">{esc(title)}</div></div><div class="d">{desc}</div></div>')
+
+
+def upload_hint(formats: str, limit_mb: int, limitations: str) -> str:
+    return (f'<div class="fl-upload-hint"><b>Accepted:</b> {esc(formats)} &middot; <b>Max size:</b> {limit_mb} MB per file'
+            f' &middot; <b>Known limitations:</b> {esc(limitations)}</div>')

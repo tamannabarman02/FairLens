@@ -9,7 +9,7 @@ from ...config import PROJECT_ROOT
 from ...experiments import jobs
 from ...reporting import export
 from .. import components as C
-from ..results import manifest, run_dir, runs
+from ..results import COMPLETED, local_time, manifest, provenance_pairs, run_dir, run_status, runs, status_note
 
 JOB_LABELS = {"train": "Train BERT + DeBERTa detectors", "detection": "Detection benchmark", "mitigation": "Mitigation benchmark",
               "gate": "Gate benchmark + ablations", "image": "Image-caption experiment", "use_cases": "Use-case demo runs",
@@ -26,26 +26,31 @@ def render():
         if not all_runs:
             C.render(C.empty_state("No runs recorded", "Launch an experiment in the next tab."))
         else:
-            df = pd.DataFrame([{"run_id": r["run_id"], "kind": r["kind"], "status": r["status"], "started": r["started_at"],
-                                "runtime_s": r["runtime_s"], "seed": r["seed"], "git": r["git_commit"]} for r in all_runs])
-            kinds = st.multiselect("Filter kinds", sorted(df.kind.unique()), default=[])
-            view = df[df.kind.isin(kinds)] if kinds else df
-            C.render(C.html_table(view.to_dict("records"), fmt={"runtime_s": ".1f"}))
+            df = pd.DataFrame([{"Run ID": r["run_id"], "Kind": r["kind"], "Status": C.status_badge(run_status(r)),
+                                "Manifest status": r["status"], "Started": local_time(r["started_at"]),
+                                "Runtime (s)": "-" if r["runtime_s"] is None or r["runtime_s"] != r["runtime_s"] else f"{r['runtime_s']:.1f}",
+                                "Seed": r["seed"] if r["seed"] is not None else "-", "Git": r["git_commit"] or "-"} for r in all_runs])
+            kinds = st.multiselect("Filter kinds", sorted(df.Kind.unique()), default=[], placeholder="All kinds")
+            view = df[df.Kind.isin(kinds)] if kinds else df
+            C.render(C.html_table(view.astype(object).where(view.notna(), "-").to_dict("records"), raw={"Status"}))
+            C.render(C.caption("Only runs labelled 'Completed run' feed the result pages. Runs still marked 'running' with no "
+                               "active process were stopped and are labelled 'Failed run'."))
+            view = view.rename(columns={"Run ID": "run_id"})
             rid = st.selectbox("Inspect run", view.run_id.tolist())
             run = next(r for r in all_runs if r["run_id"] == rid)
             m = manifest(run)
             a, b = st.columns([1, 1])
             with a:
-                st.markdown("##### Provenance")
-                C.render(C.kv([("Run", m["run_id"]), ("Kind", m["kind"]), ("Status", m["status"]), ("Command", m.get("command") or "-"),
-                               ("Seed", str(m.get("seed"))), ("Git commit", str(m.get("git_commit"))), ("Started", m["started_at"]),
-                               ("Runtime", f"{m.get('runtime_s', 0) or 0:.1f} s"),
-                               ("Hardware", f"{m['hardware']['cpu']}, {m['hardware']['ram_total_gb']} GB RAM, CUDA={m['hardware']['cuda']}"),
-                               *[(f"Data: {k}", v) for k, v in m.get("datasets", {}).items()],
-                               *[(f"Model: {k}", str(v)) for k, v in m.get("models", {}).items()]]))
+                hw = m.get("hardware") or {}
+                pairs = provenance_pairs(run) + [
+                    ("Command", m.get("command") or "-"), ("Started", local_time(m.get("started_at"))),
+                    ("Runtime", f"{m['runtime_s']:.1f} s" if m.get("runtime_s") else "-"),
+                    ("Device", str(m.get("device") or ("cuda" if hw.get("cuda") else "cpu"))),
+                    ("Hardware", f"{hw.get('cpu', '?')}, {hw.get('ram_total_gb', '?')} GB RAM" if hw else "-")]
+                C.render(C.provenance("Provenance", run_status(run), pairs, C.esc(status_note(run))))
             with b:
-                st.markdown("##### Config & metrics")
-                st.json({"config": m.get("config"), "metrics": m.get("metrics")}, expanded=False)
+                C.section("Config & metrics")
+                st.json({"config": m.get("config"), "metrics": m.get("metrics")}, expanded=1)
                 cmd = m.get("command")
                 if cmd and st.button("Reproduce this run", icon=":material/replay:", type="primary"):
                     parts = cmd.split()
@@ -72,16 +77,17 @@ def render():
         st.divider()
         recent = jobs.all_jobs()[:8]
         if recent:
-            st.markdown("##### Recent jobs")
+            C.section("Recent jobs")
             for j in recent:
                 with st.expander(f"{j['id']} · {j['status']}"):
                     st.code(jobs.log_tail(j, 25) or "(no output yet)", language=None)
-            if any(j["status"] == "running" for j in recent) and st.button("Refresh progress", icon=":material/refresh:"):
+            if any(j["status"] == "running" for j in recent) and st.button("Refresh progress", icon=":material/refresh:", on_click="ignore"):
                 st.rerun()
     with t3:
-        done = [r for r in all_runs if r["status"] == "completed" and r["kind"] in SUMMARY_FILE]
+        done = [r for r in all_runs if run_status(r) == COMPLETED and r["kind"] in SUMMARY_FILE]
         if not done:
-            C.render(C.empty_state("Nothing to export", "Exports are generated from completed benchmark runs."))
+            C.render(C.empty_state("Nothing to export yet", "Reports are generated from completed benchmark runs. Start one in "
+                                   "'Launch experiments'. To export a single analysis, use FairLens Review or Text Analysis."))
             return
         rid = st.selectbox("Run to export", [r["run_id"] for r in done], key="exp_run")
         run = next(r for r in done if r["run_id"] == rid)
@@ -91,11 +97,11 @@ def render():
         meta = {"run": rid, "kind": run["kind"], "git": run["git_commit"], "exported": time.strftime("%Y-%m-%d %H:%M")}
         title = f"FairLens report - {run['kind'].replace('benchmark_', '')}"
         a, b, c, d = st.columns(4)
-        a.download_button("PDF", export.to_pdf(title, secs, meta), f"{rid}.pdf", "application/pdf", icon=":material/picture_as_pdf:")
-        b.download_button("HTML", export.to_html(title, secs, meta), f"{rid}.html", "text/html", icon=":material/html:")
+        a.download_button("PDF", export.to_pdf(title, secs, meta), f"{rid}.pdf", "application/pdf", icon=":material/picture_as_pdf:", on_click="ignore")
+        b.download_button("HTML", export.to_html(title, secs, meta), f"{rid}.html", "text/html", icon=":material/html:", on_click="ignore")
         c.download_button("JSON", export.to_json({"manifest": manifest(run), "summary": summary}), f"{rid}.json", "application/json",
-                          icon=":material/data_object:")
+                          icon=":material/data_object:", on_click="ignore")
         tables = [b_ for _, blocks in secs for b_ in blocks if isinstance(b_, list)]
-        d.download_button("CSV", export.to_csv(tables[0] if tables else []), f"{rid}.csv", "text/csv", icon=":material/table:")
+        d.download_button("CSV", export.to_csv(tables[0] if tables else []), f"{rid}.csv", "text/csv", icon=":material/table:", on_click="ignore")
         with st.expander("Preview"):
             st.components.v1.html(export.to_html(title, secs, meta).decode(), height=500, scrolling=True)

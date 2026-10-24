@@ -3,7 +3,7 @@
 # `revision` pins a commit hash once verified (scripts/verify_models.py records it).
 
 paths:
-  cache_dir: D:/FairLens_cache/hf        # HF_HOME; override with env FAIRLENS_CACHE
+  cache_dir: null                       # null = per-user OS cache folder; override with env FAIRLENS_CACHE
   checkpoints: checkpoints              # fine-tuned detector weights (relative to project root)
   outputs: outputs
   datasets: datasets
@@ -17,7 +17,7 @@ hardware_profiles:
     description: "CPU, 8-16 GB RAM. Base-size checkpoints, one large model at a time."
     max_resident_mb: 3500
   gpu:
-    description: "CUDA GPU available."
+    description: "CUDA GPU available (Apple MPS uses the standard profile)."
     max_resident_mb: 8000
 
 detectors:
@@ -29,7 +29,7 @@ detectors:
     adapter: hf_finetuned
     display: BERT
     family: bert
-    base_model: distilbert-base-uncased
+    base_model: distilbert/distilbert-base-uncased
     checkpoint: checkpoints/distilbert_bias
     lite: true
   deberta:

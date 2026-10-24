@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 
 from ..config import load_config, pinned_revision
-from ..models import manager
+from ..models import manager, place, run_with_cpu_fallback, to_model_device
 
 STOP = set("a an the of on in at with and or to is are was were be its it this that his her their there "
            "some two three one near next by for from up down front back top while has have".split())
@@ -29,7 +29,7 @@ class ClipAlignment:
         from transformers import CLIPModel, CLIPProcessor
 
         def loader():
-            return CLIPProcessor.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)), CLIPModel.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)).eval()
+            return CLIPProcessor.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)), place(CLIPModel.from_pretrained(self.model_id, revision=pinned_revision(self.model_id)).eval())
 
         return manager().get(f"clip:{self.model_id}", loader)
 
@@ -39,11 +39,15 @@ class ClipAlignment:
 
         proc, model = self._load()
         inputs = proc(text=captions, images=image.convert("RGB"), return_tensors="pt", padding=True, truncation=True)
-        with torch.inference_mode():
-            out = model(**inputs)
+
+        def run():
+            with torch.inference_mode():
+                return model(**to_model_device(inputs, model))
+
+        out = run_with_cpu_fallback(model, run)
         img = out.image_embeds / out.image_embeds.norm(dim=-1, keepdim=True)
         txt = out.text_embeds / out.text_embeds.norm(dim=-1, keepdim=True)
-        return (txt @ img.T).squeeze(-1).float().tolist()
+        return (txt @ img.T).squeeze(-1).float().cpu().tolist()
 
 
 def content_words(text: str) -> set[str]:

@@ -1,8 +1,9 @@
 {
-  "distilbert-base-uncased": {
+  "distilbert/distilbert-base-uncased": {
     "sha": "12040accade4e8a0f71eabdb258fecc2e7e948be",
     "license": "apache-2.0",
-    "verified_at": "2026-10-23T18:39:59+00:00"
+    "verified_at": "2026-10-23T18:39:59+00:00",
+    "note": "Same commit as legacy id distilbert-base-uncased; the Hub serves its weights only under this canonical name."
   },
   "bert-base-uncased": {
     "sha": "86b5e0934494bd15c9632b12f734a8a67f723594",

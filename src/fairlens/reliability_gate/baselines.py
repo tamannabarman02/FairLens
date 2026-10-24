@@ -14,6 +14,17 @@ from .signals import Signals
 Policy = Callable[[list[Signals]], "str | None"]
 
 
+ORIGINAL = "original"
+
+
+def no_change(sigs: list[Signals]) -> str | None:
+    """(e) always keep the original text, i.e. never rewrite (NO CHANGE)."""
+    names = [s.candidate for s in sigs]
+    if ORIGINAL in names:
+        return ORIGINAL
+    return next((s.candidate for s in sigs if not s.changed), None)
+
+
 def lowest_bias(sigs: list[Signals]) -> str | None:
     """(a) choose the candidate with the lowest ensemble bias score (ties -> first)."""
     return min(sigs, key=lambda s: s.bias_after).candidate

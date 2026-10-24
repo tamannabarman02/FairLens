@@ -27,7 +27,7 @@ SAMPLE_IMAGE_URL = "http://images.cocodataset.org/val2017/000000039769.jpg"
 
 # key: (role, model_id, kind)
 CANDIDATES = {
-    "distilbert-base-uncased": ("detector base (BERT family)", "distilbert-base-uncased", "encoder"),
+    "distilbert/distilbert-base-uncased": ("detector base (BERT family)", "distilbert/distilbert-base-uncased", "encoder"),
     "bert-base-uncased": ("detector base (BERT family, larger)", "bert-base-uncased", "encoder"),
     "deberta-v3-small": ("detector base (DeBERTa family)", "microsoft/deberta-v3-small", "encoder"),
     "hub-bias-roberta": ("pretrained Hub bias classifier", "himel7/bias-detector", "classifier"),
@@ -204,7 +204,7 @@ def main() -> None:
     out_dir = ROOT / "outputs" / "model_verification"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "verification.json"
-    results = json.loads(out_file.read_text()) if out_file.exists() else {}
+    results = json.loads(out_file.read_text(encoding="utf-8")) if out_file.exists() else {}
     keys = args.only.split(",") if args.only else list(CANDIDATES)
     import fairlens.config  # noqa: F401  (cache env)
 
@@ -227,11 +227,11 @@ def main() -> None:
         results[key] = rec
         print(json.dumps({k: rec.get(k) for k in ["status", "license", "weights_mb", "load_s", "latency_ms",
                                                   "peak_mb", "sample_output", "error"]}, default=str), flush=True)
-        out_file.write_text(json.dumps(results, indent=2, default=str))
+        out_file.write_text(json.dumps(results, indent=2, default=str), encoding="utf-8")
 
     lock = {r["model_id"]: {"sha": r.get("sha"), "license": r.get("license"), "verified_at": r["verified_at"]}
             for r in results.values() if r.get("status") == "verified" and r.get("sha")}
-    (ROOT / "configs" / "model_lock.json").write_text(json.dumps(lock, indent=2))
+    (ROOT / "configs" / "model_lock.json").write_text(json.dumps(lock, indent=2), encoding="utf-8")
     print(f"wrote {out_file} and configs/model_lock.json ({len(lock)} pinned)")
 
 

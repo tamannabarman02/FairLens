@@ -140,3 +140,29 @@ def sections_for_analysis(analysis: dict | None, mitigation: dict | None) -> lis
                                      "bias_after": c["bias_after"], "similarity": c["semantic_similarity"],
                                      "fact_retention": c["fact_retention"]} for c in mitigation["candidates"]]]))
     return out
+
+
+REVIEW_DISCLAIMER = "Review assistant, not a legal or compliance certification tool. FairLens cannot guarantee that any text is unbiased."
+
+
+def sections_for_review(analysis: dict, mitigation: dict | None, evidence: list[dict], checks: list[tuple[str, bool | None, str]],
+                        selected: str | None, reasons: dict[str, str]) -> list[Section]:
+    """Report sections for the 6-step FairLens Review (job description) workflow."""
+    out: list[Section] = [("Scope", [REVIEW_DISCLAIMER]), ("1. Input", [analysis["text"]])]
+    flags = [{"phrase": e["phrase"], "category": e["category_label"], "flagged_by": ", ".join(e["flagged_by"]) or "rule match only",
+              "rule_weight": e.get("weight"), "explanation": e["explanation"]} for e in evidence]
+    det = [{"detector": v["display"], "score": v["score"], "label": v["label"]} for v in analysis["detector_results"].values()]
+    out.append(("2. Flagged phrases and evidence", [f"Overall bias score {analysis['ensemble_score']:.2f} ({analysis['level']}).",
+                                                    det, flags or "No phrases were flagged by the rule lexicon."]))
+    if mitigation:
+        cands = {c["candidate"]: c for c in mitigation["candidates"]}
+        out.append(("3. Original vs proposed rewrites", [[{"version": k, "text": c["text"], "verdict": c["verdict"],
+                                                           "bias_after": c["bias_after"]} for k, c in cands.items()]]))
+        out.append(("4. Critical-fact preservation" + (f" ({selected})" if selected else ""),
+                    [[{"check": n, "result": "n/a" if ok is None else "pass" if ok else "fail", "detail": d} for n, ok, d in checks]]))
+        d = mitigation["decision"]
+        out.append(("5. Reliability Gate verdict", [f"Decision: {d['decision']} ({d['reason_code']}). {d['reason']}",
+                                                    f"Chosen version: {d.get('chosen') or 'none'}" + (f" -> {d['chosen_text']}" if d.get("chosen_text") else ""),
+                                                    [{"version": c["candidate"], "verdict": c["verdict"], "reason_codes": ", ".join(c["reasons"]),
+                                                      "meaning": " ".join(reasons.get(r, r) for r in c["reasons"])} for c in mitigation["candidates"]]]))
+    return out

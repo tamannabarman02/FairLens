@@ -32,9 +32,14 @@ def split_sentences(text: str, max_sentences: int = 200) -> list[Sentence]:
                     start = i + 1
             i += 1
             continue
-        if ch == "\n" and i + 1 < n and text[i + 1] == "\n":
-            _push(out, text, start, i)
-            start = i + 2
+        if ch == "\n":
+            j = i + 1
+            while j < n and text[j] in " \t\r":
+                j += 1
+            if j < n and text[j] == "\n":
+                _push(out, text, start, i)
+                start = i = j + 1
+                continue
         elif ch in ".!?" and not in_quote:
             j = i + 1
             while j < n and text[j] in ".!?\"”')":

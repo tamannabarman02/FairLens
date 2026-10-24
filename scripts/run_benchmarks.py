@@ -42,7 +42,7 @@ def log(msg):
 
 
 def choose_zero_shot_template(det: ZeroShotNLIDetector, val: pd.DataFrame, n: int, cache: ScoreCache) -> tuple[str, dict]:
-    sample = val.groupby("label", group_keys=False).apply(lambda d: d.sample(min(len(d), n // 2), random_state=0))
+    sample = pd.concat([d.sample(min(len(d), n // 2), random_state=0) for _, d in val.groupby("label")])
     results = {}
     for name, hyp in ZS_TEMPLATES.items():
         det.hyp_biased, det.hyp_neutral = hyp["biased"], hyp.get("neutral")

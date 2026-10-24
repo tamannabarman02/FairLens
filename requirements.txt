@@ -1,9 +1,12 @@
-# FairLens pinned dependencies (verified on Python 3.11.9, Windows 11, CPU-only).
-# Install with:  powershell -ExecutionPolicy Bypass -File install.ps1
-# CPU PyTorch wheels come from the PyTorch index:
+# FairLens pinned dependencies (Python 3.11; Windows, macOS and Linux).
+# Install with:  powershell -ExecutionPolicy Bypass -File install.ps1   (Windows)
+#                bash install.sh                                         (macOS / Linux)
+# Windows/Linux use CPU PyTorch wheels from the PyTorch index; macOS uses the standard wheels (CPU + Apple MPS).
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.14.1+cpu
-torchvision==0.29.1+cpu
+torch==2.14.1+cpu; sys_platform != "darwin"
+torchvision==0.29.1+cpu; sys_platform != "darwin"
+torch==2.14.1; sys_platform == "darwin"
+torchvision==0.29.1; sys_platform == "darwin"
 transformers==5.20.2
 sentence-transformers==6.2.0
 datasets==5.1.0

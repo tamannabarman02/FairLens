@@ -1,28 +1,52 @@
 # Progress log
 
-Resumable status for anyone continuing this build. **Update this file after every finished step and commit + push.**
-Last updated: 2026-10-24 ~01:25 local, when the owner's usage limit was reached. **No jobs are running.**
-Repo: https://github.com/tamannabarman02/FairLens (private).
+Resumable status for anyone continuing this build. **Update this file after every finished step.**
+Last updated: 2026-10-24 ~04:50, on macOS (Apple M4, 16 GB, MPS). Cross-platform work done; first full set of
+benchmark runs completed. See `docs/PROTOCOL_CHANGES.md` for every protocol change and `docs/AUDIT.md` for the
+verification of the earlier status claims.
 
-## Status at a glance
+## Status at a glance (2026-10-24)
 
 | Item | State | Evidence |
 |---|---|---|
-| Phase 0 environment + setup | DONE | `docs/ENVIRONMENT.md`, `install.ps1`, `requirements.txt` (pinned) |
-| Model verification (16 models, real inference) | DONE, all verified | `outputs/model_verification/verification.json`, `configs/model_lock.json` |
-| Datasets (BABE, StereoSet, CrowS-Pairs, WinoBias probe) | DONE | `datasets/processed/*.parquet`, `dataset_manifest.json` (15,136 rows, 0 leaking groups) |
-| Curated authored set + mitigation set + controlled gate set | DONE | `datasets/curated/authored_cases.jsonl` (91 biased + 45 neutral), `mitigation_eval.parquet` (276), `gate_controlled.parquet` |
-| DistilBERT fine-tune | DONE: best val macro-F1 **0.761** (epochs 0.722 / 0.744 / 0.761), 36 min | `checkpoints/distilbert_bias/` (weights local only, gitignored), `fairlens_training.json` tracked |
-| DeBERTa-v3-small fine-tune | **NOT DONE**: stopped twice, no checkpoint saved | see "DeBERTa problem" below |
-| FLAN-T5 copy-failure investigation | DONE (negative result) | see Findings |
-| Prompt selection (train-split dev sample) | NOT RUN | `scripts/select_prompts.py` (now includes few-shot variants) |
-| Detection / mitigation / gate+ablation / image benchmarks | **NOT RUN** (no results exist yet) | scripts ready |
-| Use-case runs | NOT RUN | `scripts/run_use_cases.py` |
-| Dashboard (11 pages) | WRITTEN; browser smoke test **passed 44/44** (11 pages x light/dark x 1366/1920, no Streamlit exceptions, no horizontal overflow) with empty states only | `scripts/ui_smoke.py`, `outputs/ui_screenshots/report.json` (screenshots local) |
-| Dashboard with real results / interactive flow (`ui_smoke.py --flow`) | NOT YET VERIFIED | needs trained models + benchmark runs |
-| Tests | **44 passed** (`pytest -m "not slow"`); 2 slow real-model tests written, not yet run | `tests/` |
-| Docs written | ENVIRONMENT, LEGACY_REVIEW, DATASETS, MODEL_CARD_REGISTRY (measured table filled by generator), METHODOLOGY, ARCHITECTURE, UI_PLAN | `docs/` |
-| Docs NOT written | LIMITATIONS, RESEARCH_REPORT, PROJECT_REPORT_OUTLINE, APPLICATIONS_AND_VIVA, final README; RESULTS.md is a placeholder until runs exist | |
+| Runs on Windows, macOS, Linux | Code done; tests pass on macOS; CI workflow for all three added, **not yet run on GitHub** and **not yet tried on a Windows laptop** | `.github/workflows/tests.yml`, README |
+| Device selection CUDA → MPS → CPU | Done | `hardware.py`, `models.py`, `tests/test_device.py` |
+| Upload formats (TXT, PDF, DOCX, CSV, JPG, PNG, GIF) | Verified at library level (87 tests) and in the browser flow (54/54, model calls stubbed) | `tests/test_ingestion_formats.py`, `docs/design/UI_AUDIT.md` |
+| DistilBERT fine-tune | Done on MPS: best **val** macro-F1 0.768 | run `20261024-032822-train_detector-ceb08f` |
+| DeBERTa-v3-small fine-tune | Done on MPS: best **val** macro-F1 0.818 (frozen embeddings, float32: P1, P2) | run `*-034605-train_detector-6acf4e` |
+| Prompt selection | Done: `V2_inclusive`, no demos (train-split sample) | `configs/prompt_selection.json` (no run manifest; script does not use the tracker) |
+| Detection benchmark | Done (first attempt failed: pandas 3 bug, fixed) | run `20261024-043227-benchmark_detection-a4a61f` |
+| LLM-judge prompt (val only) | Done: `checker_system` | `configs/llm_judge.json` |
+| Gate vs baselines + ablations | Done | run `20261024-040545-benchmark_gate-7565de` |
+| Mitigation benchmark | Done | run `20261024-040853-benchmark_mitigation-000f03` |
+| Image experiment | Done | run `20261024-041855-benchmark_image-4acb2c` |
+| Six use cases | Done (no run manifest; the script writes `outputs/use_cases/`). **Failure case:** the reliability demo sentence "Women are not suited to engineering, …" scored ensemble 0.48 (< 0.5) and was left unchanged as NEUTRAL_UNCHANGED | `outputs/use_cases/`, `outputs/logs/use_cases.log` |
+| Tests | 243 fast + 2 slow (real models) pass on macOS | `pytest -q -m "not slow"`, `pytest -q -m slow` |
+| UI | Audited and redesigned; FairLens Review page added; 48/48 page screenshots clean with real results | `docs/design/UI_AUDIT.md` |
+| Results doc | Generated from runs | `docs/RESULTS.md` |
+
+## Open decisions (need the team)
+
+1. **BART-MNLI template downstream.** The detection benchmark picks the zero-shot template on validation
+   (`T2_single_biased`), but the Gate, mitigation and the app use the default pair template from
+   `configs/models.yaml` (`T5_pair_original`, val macro-F1 0.333). Options: keep as is and document it, or write the
+   chosen template into the config and re-run `gate`, `mitigation`, `use_cases`, `results`. Not changed silently.
+2. **"Harmful choice" for keeping a biased original** (P5 in `PROTOCOL_CHANGES.md`).
+3. Human evaluation, red-team corruption tests on real accepted rewrites, risk–coverage curves, threshold
+   sensitivity, prior-work review: **not started** (plan stage 4 and 6).
+4. Final runs for the paper should be made on one named device; current runs are all MPS.
+
+## Next steps
+
+```text
+Windows teammate: install.ps1, run the fast tests, report results
+Push to GitHub so the CI matrix runs on Windows/macOS/Linux
+Decide open decision 1, then: python scripts/run_all.py --from gate
+Stage 4: risk-coverage, red-team, human evaluation, sensitivity
+Write LIMITATIONS, related work, paper
+```
+
+## Earlier log (Windows, before 2026-10-24)
 
 ## Findings so far (real)
 - CPU-only i7-1355U, 15.7 GB RAM but typically ~2 GB free -> Windows swaps (pagefile 2 GB in use observed).

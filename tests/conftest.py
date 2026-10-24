@@ -1,11 +1,11 @@
-import os
 import sys
 from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-os.environ.setdefault("PYTHONUTF8", "1")
+
+INGESTION_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "ingestion"
 
 
 class FakeDetector:
@@ -69,3 +69,9 @@ def fake_detectors():
 @pytest.fixture
 def fake_suite():
     return FakeSuite()
+
+
+@pytest.fixture
+def upload():
+    """Bytes of a file in tests/fixtures/ingestion/, as the UI receives an upload."""
+    return lambda name: (INGESTION_FIXTURES / name).read_bytes()

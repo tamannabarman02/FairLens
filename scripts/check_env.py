@@ -1,7 +1,9 @@
 """Phase 0: inspect the machine and write docs/ENVIRONMENT.md."""
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -9,20 +11,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from fairlens.config import PROJECT_ROOT, load_config  # noqa: E402
-from fairlens.hardware import detect, select_profile  # noqa: E402
+from fairlens.config import PROJECT_ROOT  # noqa: E402
+from fairlens.hardware import detect, device_label, select_profile  # noqa: E402
+
+
+def free_gb(path: Path) -> float | None:
+    """Free space on the volume holding `path` (or its nearest existing parent)."""
+    for p in [path, *path.parents]:
+        if p.exists():
+            return round(shutil.disk_usage(p).free / 2**30, 1)
+    return None
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-write", action="store_true", help="print the report without overwriting docs/ENVIRONMENT.md")
+    a = ap.parse_args()
     info = detect()
     profile = select_profile(info)
-    cache = load_config()["paths"]["cache_dir"]
-    drives = {}
-    for d in ["C:\\", "D:\\", "F:\\"]:
-        try:
-            drives[d] = round(shutil.disk_usage(d).free / 2**30, 1)
-        except OSError:
-            pass
+    cache = Path(os.environ["HF_HOME"])
+    disks = {"project folder": (PROJECT_ROOT, free_gb(PROJECT_ROOT)), "model cache": (cache, free_gb(cache))}
     pkgs = {}
     for name in ["torch", "transformers", "sentence_transformers", "datasets", "spacy", "sklearn", "streamlit", "pandas", "numpy"]:
         try:
@@ -42,12 +50,12 @@ def main() -> None:
         f"| OS | {info.os} |",
         f"| CPU | {info.cpu} ({info.cpu_threads} logical threads) |",
         f"| RAM | {info.ram_total_gb} GB total, {info.ram_available_gb} GB available at check time |",
-        f"| GPU / CUDA | {info.gpu_name or 'none'} / {'yes' if info.cuda else 'no (CPU-only)'} |",
-        f"| Free disk (project drive) | {info.disk_free_gb} GB |",
-        f"| Free disk per drive | {', '.join(f'{k} {v} GB' for k, v in drives.items())} |",
+        f"| GPU / CUDA / MPS | {info.gpu_name or 'none'} / {'yes' if info.cuda else 'no'} / {'yes' if info.mps else 'no'} |",
+        f"| Compute device used | {device_label()} |",
+        *[f"| Free disk ({k}) | {v if v is not None else '?'} GB at `{p.as_posix()}` |" for k, (p, v) in disks.items()],
         f"| Internet (huggingface.co:443) | {'reachable' if info.internet else 'NOT reachable'} |",
         f"| Selected hardware profile | `{profile}` |",
-        f"| Model cache (HF_HOME) | `{cache}` |",
+        f"| Model cache (HF_HOME) | `{cache.as_posix()}` |",
         "",
         "## Package versions",
         "",
@@ -57,21 +65,22 @@ def main() -> None:
         "",
         "## Consequences for the build",
         "",
-        "- No CUDA GPU: all training and inference run on CPU with `torch` CPU wheels.",
-        "- 16 GB RAM but often only ~2 GB free while other apps run: models are loaded lazily and",
+        f"- Models run on: {device_label()} (override with `FAIRLENS_DEVICE=cpu|cuda|mps`).",
+        f"- {info.ram_available_gb} of {info.ram_total_gb} GB RAM free at check time: models are loaded lazily and",
         "  only one large model is kept resident at a time (`fairlens.models.ModelManager`).",
-        "- C: has little free space, so the virtual environment (`D:/FairLens/.venv`), pip cache and",
-        "  Hugging Face cache (`D:/FairLens_cache`) live on D:.",
-        "- Python 3.11 is used for the venv (better ML wheel coverage than the system 3.13/3.14).",
+        "- Model downloads need ~25 GB in the model cache folder above; set `FAIRLENS_CACHE` to move it",
+        "  to a volume with more free space.",
+        "- Python 3.11 is used for the venv (best ML wheel coverage).",
         "",
         "```json",
         json.dumps(info.to_dict(), indent=2),
         "```",
         "",
     ]
-    out = PROJECT_ROOT / "docs" / "ENVIRONMENT.md"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\n".join(lines), encoding="utf-8")
+    if not a.no_write:
+        out = PROJECT_ROOT / "docs" / "ENVIRONMENT.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines))
 
 

@@ -1,0 +1,96 @@
+{
+  "run_id": "20261024-041855-benchmark_image-4acb2c",
+  "n_images": 80,
+  "scope_note": "Bias in generated captions only; not all visual bias.",
+  "captioners": {
+    "blip": {
+      "display": "BLIP",
+      "model": "Salesforce/blip-image-captioning-base",
+      "n_ok": 80,
+      "n_failed": 0,
+      "ms_per_image": 351.67565575029585,
+      "clip_similarity": {
+        "mean": 0.2807118475437164,
+        "lo": 0.2724519736785442,
+        "hi": 0.28848370421677827,
+        "n": 80
+      },
+      "mean_words": 7.7125,
+      "detail_coverage": {
+        "mean": 0.1575135465230616,
+        "lo": 0.1389589980001238,
+        "hi": 0.17586608585960609,
+        "n": 80
+      },
+      "alignment_bands": {
+        "Medium": 39,
+        "High": 25,
+        "Low": 16
+      },
+      "gender_term_rate_person_images": 0.5333333333333333,
+      "unsupported_attribute_rate": 0.0,
+      "mean_bias_score": 0.49111117346474203,
+      "flagged_rate": 0.475,
+      "per_detector_flag_rate": {
+        "bert": 0.5125,
+        "deberta": 0.4125,
+        "bart_mnli": 1.0,
+        "rule_based": 0.0
+      }
+    },
+    "florence": {
+      "display": "Florence-2",
+      "model": "florence-community/Florence-2-base",
+      "n_ok": 80,
+      "n_failed": 0,
+      "ms_per_image": 7998.1243026371885,
+      "clip_similarity": {
+        "mean": 0.3055257448926568,
+        "lo": 0.29816427922341976,
+        "hi": 0.3129279186436907,
+        "n": 80
+      },
+      "mean_words": 10.9,
+      "detail_coverage": {
+        "mean": 0.23239802947544147,
+        "lo": 0.2144051549888403,
+        "hi": 0.25153651391643067,
+        "n": 80
+      },
+      "alignment_bands": {
+        "High": 46,
+        "Medium": 29,
+        "Low": 5
+      },
+      "gender_term_rate_person_images": 0.6,
+      "unsupported_attribute_rate": 0.0,
+      "mean_bias_score": 0.5202182032563722,
+      "flagged_rate": 0.6875,
+      "per_detector_flag_rate": {
+        "bert": 0.5125,
+        "deberta": 0.7,
+        "bart_mnli": 1.0,
+        "rule_based": 0.0
+      }
+    }
+  },
+  "reference_captions": {
+    "clip_similarity": {
+      "mean": 0.3038116993382573,
+      "lo": 0.29693481270223854,
+      "hi": 0.3102213436923921,
+      "n": 80
+    },
+    "gender_term_rate_person_images_any_ref": 0.7333333333333333
+  },
+  "agreement": {
+    "pair": [
+      "blip",
+      "florence"
+    ],
+    "both_flagged": 35,
+    "only_blip": 3,
+    "only_florence": 20,
+    "score_corr": 0.34152477329972647
+  }
+}

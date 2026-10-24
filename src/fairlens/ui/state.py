@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import streamlit as st
 
+from . import smoke_stubs
+
 DEFAULTS = {
     "theme": "light", "lite": False, "text_input": "", "analysis": None, "mitigation": None,
     "selected_candidate": None, "image_result": None, "image_bytes": None, "image_name": None,
-    "pending_example": None,
+    "pending_example": None, "review_step": 0, "review_source": None, "review_warnings": [], "review_units": None, "review_unit": 0,
 }
 
 
@@ -19,6 +21,8 @@ def init() -> None:
 def detectors(lite: bool):
     from ..detection.registry import build_detectors
 
+    if smoke_stubs.enabled():
+        return smoke_stubs.detectors()
     return build_detectors(lite=lite)
 
 
@@ -26,6 +30,8 @@ def detectors(lite: bool):
 def rewriters(lite: bool):
     from ..mitigation.llm_adapters import build_rewriters
 
+    if smoke_stubs.enabled():
+        return smoke_stubs.rewriters()
     return build_rewriters(lite=lite)
 
 
@@ -33,6 +39,8 @@ def rewriters(lite: bool):
 def suite():
     from ..evaluation.preservation import PreservationSuite
 
+    if smoke_stubs.enabled():
+        return smoke_stubs.OverlapSuite()
     return PreservationSuite()
 
 
@@ -40,6 +48,8 @@ def suite():
 def captioners(fallback: bool = False):
     from ..multimodal.captioners import build_captioners
 
+    if smoke_stubs.enabled():
+        return smoke_stubs.captioners()
     return build_captioners(use_fallback_for_florence=fallback)
 
 
@@ -47,6 +57,8 @@ def captioners(fallback: bool = False):
 def aligner():
     from ..multimodal.caption_evaluation import ClipAlignment
 
+    if smoke_stubs.enabled():
+        return smoke_stubs.ConstantAligner()
     return ClipAlignment()
 
 

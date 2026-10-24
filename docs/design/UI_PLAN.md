@@ -67,3 +67,13 @@ All semantic colours are paired with a text label or icon (never colour alone) f
 - Lite mode toggle in the sidebar switches to the lite checkpoints.
 - Tooltips (`help=`) on every metric explaining what it measures.
 - Layout checked at 1366px and 1920px; columns collapse below 1100px.
+
+## 5. Revision 2026-10-24 (see `UI_AUDIT.md`)
+
+- Type scale `--fs-xs 12 · sm 13.5 · base 15 · md 16 · lg 18 · xl 22 · 2xl 30 · hero 48` and spacing scale
+  `--sp-1 4 … --sp-7 44 px` in `assets/styles.css`; pages use `C.section`, `C.caption`, `C.gap` instead of inline styles.
+- Navigation groups: Workflow (Home, **FairLens Review**, Text Analysis, Mitigation, Reliability Gate, Image Analysis),
+  Research (Benchmarks, Model Comparison, Error Analysis, Experiments & Exports), More (Use Cases, About).
+- Every research result carries one status label (Completed run / Pending / Failed run / Illustrative example) and a
+  provenance card (run ID, models@revision, dataset version, key config): `C.provenance`, `common.result_header`.
+- Upload controls are built from the ingestion constants and state formats, size limit and known limitations.

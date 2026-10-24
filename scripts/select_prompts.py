@@ -35,7 +35,7 @@ VARIANTS = {
 def main(n: int = 30):
     det = pd.read_parquet(ROOT / "datasets" / "processed" / "detection.parquet")
     dev = det[(det.split == "train") & (det.label == 1) & det.text.str.split().str.len().between(6, 35)]
-    dev = dev.groupby("source", group_keys=False).apply(lambda d: d.sample(n // 4 + 1, random_state=7)).head(n)
+    dev = pd.concat([d.sample(n // 4 + 1, random_state=7) for _, d in dev.groupby("source")]).head(n)
     texts = dev.text.tolist()
     rule = RuleBasedDetector()
     sim = SemanticSimilarity()

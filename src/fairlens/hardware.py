@@ -20,6 +20,7 @@ class HardwareInfo:
     ram_available_gb: float
     disk_free_gb: float
     cuda: bool
+    mps: bool
     gpu_name: str | None
     gpu_vram_gb: float | None
     internet: bool
@@ -53,7 +54,7 @@ def detect(check_internet: bool = True, disk_path: str | None = None) -> Hardwar
     from .config import PROJECT_ROOT
 
     vm = psutil.virtual_memory()
-    cuda, gpu_name, vram, torch_version = False, None, None, None
+    cuda, mps, gpu_name, vram, torch_version = False, False, None, None, None
     try:
         import torch
 
@@ -62,6 +63,9 @@ def detect(check_internet: bool = True, disk_path: str | None = None) -> Hardwar
         if cuda:
             gpu_name = torch.cuda.get_device_name(0)
             vram = round(torch.cuda.get_device_properties(0).total_memory / 2**30, 1)
+        mps = _mps_available(torch)
+        if mps and not cuda:
+            gpu_name = "Apple MPS"
     except ImportError:
         pass
     return HardwareInfo(
@@ -73,6 +77,7 @@ def detect(check_internet: bool = True, disk_path: str | None = None) -> Hardwar
         ram_available_gb=round(vm.available / 2**30, 1),
         disk_free_gb=round(shutil.disk_usage(disk_path or PROJECT_ROOT).free / 2**30, 1),
         cuda=cuda,
+        mps=mps,
         gpu_name=gpu_name,
         gpu_vram_gb=vram,
         internet=_internet() if check_internet else False,
@@ -93,10 +98,33 @@ def select_profile(info: HardwareInfo | None = None) -> str:
     return "lite"
 
 
+def _mps_available(torch_module) -> bool:
+    backend = getattr(torch_module.backends, "mps", None)
+    return bool(backend and backend.is_available() and backend.is_built())
+
+
 def device() -> str:
+    """Return 'cuda', 'mps' or 'cpu' (in that order of preference). FAIRLENS_DEVICE env var overrides."""
+    forced = (os.environ.get("FAIRLENS_DEVICE") or "").strip().lower()
     try:
         import torch
-
-        return "cuda" if torch.cuda.is_available() else "cpu"
     except ImportError:
         return "cpu"
+    available = {"cpu": True, "cuda": torch.cuda.is_available(), "mps": _mps_available(torch)}
+    if forced in available:
+        if available[forced]:
+            return forced
+        import warnings
+
+        warnings.warn(f"FAIRLENS_DEVICE={forced} is not available on this machine; falling back to CPU.")
+        return "cpu"
+    if available["cuda"]:
+        return "cuda"
+    if available["mps"]:
+        return "mps"
+    return "cpu"
+
+
+def device_label() -> str:
+    """Short human-readable name of the selected compute device for the UI."""
+    return {"cuda": "CUDA GPU", "mps": "Apple GPU (MPS)", "cpu": "CPU"}[device()]

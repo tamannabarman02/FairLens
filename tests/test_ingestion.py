@@ -10,7 +10,7 @@ def test_txt_and_csv():
     assert extract_text("a.txt", "Hello world.".encode()).text == "Hello world."
     csv_bytes = b"id,text\n1,First row.\n2,Second row.\n"
     doc = extract_text("a.csv", csv_bytes)
-    assert doc.text == "First row.\nSecond row."
+    assert doc.text == "First row.\n\nSecond row." and doc.column == "text"
 
 
 def test_docx_and_pdf_roundtrip():

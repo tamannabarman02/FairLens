@@ -23,8 +23,8 @@ from ..models import manager
 from ..reliability_gate import baselines as B
 from ..reliability_gate.rules import ACCEPT, HUMAN_REVIEW, RETRY, GateConfig, decide, judge
 from ..reliability_gate.signals import compute_signals, normalise
-from .cache import ScoreCache, detector_identity, score_texts
-from .tracking import RunTracker
+from .cache import ScoreCache, detector_identity, generator_identity, score_texts
+from .tracking import RunTracker, rel_path
 
 PROC = PROJECT_ROOT / "datasets" / "processed"
 
@@ -51,7 +51,7 @@ def generate(rewriters: dict, items: list[tuple[str, str]], strict: bool, attemp
         if strict and name == "rule_based":
             continue
         manager().clear()
-        ident = getattr(rw, "model_id", name)
+        ident = generator_identity(rw)
         log(f"  generating with {rw.display} ({ident}) for {len(items)} inputs, strict={strict}")
         t0 = time.perf_counter()
         for k, (iid, text) in enumerate(items):
@@ -97,7 +97,7 @@ def run_mitigation(limit: int | None = None, lite: bool = False, rewriter_keys=N
                    cfg: GateConfig | None = None) -> str:
     df = pd.read_parquet(PROC / "mitigation_eval.parquet")
     if limit:
-        df = df.groupby("label", group_keys=False).apply(lambda d: d.head(max(1, limit * len(d) // len(df))))
+        df = pd.concat([d.head(max(1, limit * len(d) // len(df))) for _, d in df.groupby("label")])
     if cfg is None:
         from ..ui.state import tuned_gate_overrides  # thresholds tuned on the gate *val* split, if a gate run exists
 
@@ -181,7 +181,7 @@ def run_mitigation(limit: int | None = None, lite: bool = False, rewriter_keys=N
     summary["run_id"] = tracker.run_id
     tracker.save_artifact("mitigation_candidates.parquet", cand_df)
     (tracker.dir / "prompts_log.jsonl").write_text("\n".join(json.dumps(r, default=str) for r in gen_log), encoding="utf-8")
-    tracker.manifest.setdefault("artifacts", {})["prompts_log.jsonl"] = str((tracker.dir / "prompts_log.jsonl").relative_to(PROJECT_ROOT))
+    tracker.manifest.setdefault("artifacts", {})["prompts_log.jsonl"] = rel_path(tracker.dir / "prompts_log.jsonl")
     tracker.save_artifact("mitigation_summary.json", summary)
     tracker.finish(metrics={"gate_final": summary["gate_final_distribution"],
                             "policies": {k: {m: v.get(m) for m in ["accepted_fact_failure_rate", "unnecessary_change_rate"]}

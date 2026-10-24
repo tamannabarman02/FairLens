@@ -1,0 +1,77 @@
+{
+  "run_id": "20261024-041855-benchmark_image-4acb2c",
+  "task": "benchmark_image",
+  "kind": "benchmark_image",
+  "status": "completed",
+  "started_at": "2026-10-23T22:48:55+00:00",
+  "finished_at": "2026-10-23T23:00:21+00:00",
+  "runtime_s": 685.46,
+  "command": "run_image_experiment.py",
+  "config": {
+    "n_person": 60,
+    "n_other": 20,
+    "fallback": false,
+    "captioners": {
+      "blip": "Salesforce/blip-image-captioning-base",
+      "florence": "florence-community/Florence-2-base"
+    }
+  },
+  "seed": 42,
+  "seeds": [
+    42
+  ],
+  "git_commit": null,
+  "datasets": {
+    "datasets/images/coco_val2017_subset/manifest.json": "b433a36743f89b61"
+  },
+  "dataset_versions": {},
+  "models": {
+    "blip": "Salesforce/blip-image-captioning-base",
+    "florence": "florence-community/Florence-2-base"
+  },
+  "model_revisions": {
+    "blip": {
+      "model_id": "Salesforce/blip-image-captioning-base",
+      "revision": "82a37760796d32b1411fe092ab5d4e227313294b"
+    },
+    "florence": {
+      "model_id": "florence-community/Florence-2-base",
+      "revision": "00921df66db728a9ceb750f5eca43e5c203a2051"
+    }
+  },
+  "device": "mps",
+  "hardware": {
+    "python": "3.11.14",
+    "os": "Darwin 25.4.0 (Darwin Kernel Version 25.4.0: Thu Mar 19 19:31:09 PDT 2026; root:xnu-12377.101.15~1/RELEASE_ARM64_T8132)",
+    "cpu": "arm",
+    "cpu_threads": 10,
+    "ram_total_gb": 16.0,
+    "ram_available_gb": 5.6,
+    "disk_free_gb": 108.1,
+    "cuda": false,
+    "mps": true,
+    "gpu_name": "Apple MPS",
+    "gpu_vram_gb": null,
+    "internet": false,
+    "torch_version": "2.14.1"
+  },
+  "outputs": {
+    "run_dir": "outputs/runs/20261024-041855-benchmark_image-4acb2c",
+    "manifest": "outputs/runs/20261024-041855-benchmark_image-4acb2c/manifest.json"
+  },
+  "fairlens_version": "0.1.0",
+  "artifacts": {
+    "image_captions.parquet": "outputs/runs/20261024-041855-benchmark_image-4acb2c/image_captions.parquet",
+    "image_summary.json": "outputs/runs/20261024-041855-benchmark_image-4acb2c/image_summary.json"
+  },
+  "metrics": {
+    "blip": {
+      "clip": 0.2807118475437164,
+      "flagged_rate": 0.475
+    },
+    "florence": {
+      "clip": 0.3055257448926568,
+      "flagged_rate": 0.6875
+    }
+  }
+}

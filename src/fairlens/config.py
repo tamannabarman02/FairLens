@@ -1,11 +1,12 @@
 """Configuration loading and project paths.
 
 Importing this module sets the Hugging Face cache location *before* transformers is
-imported anywhere, so model downloads land on the configured drive (D: by default).
+imported anywhere, so model downloads land in one per-user cache folder on every OS.
 """
 from __future__ import annotations
 
 import os
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -29,7 +30,7 @@ LOCK_PATH = PROJECT_ROOT / "configs" / "model_lock.json"
 def _lock() -> dict[str, dict]:
     import json
 
-    return json.loads(LOCK_PATH.read_text()) if LOCK_PATH.exists() else {}
+    return json.loads(LOCK_PATH.read_text(encoding="utf-8")) if LOCK_PATH.exists() else {}
 
 
 def pinned_revision(model_id: str | None) -> str | None:
@@ -48,9 +49,19 @@ def outputs_dir(*parts: str) -> Path:
     return p
 
 
+def default_cache_dir() -> Path:
+    """Per-user model cache: %LOCALAPPDATA% on Windows, ~/Library/Caches on macOS, ~/.cache elsewhere."""
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
+        return base / "FairLens" / "hf"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Caches" / "FairLens" / "hf"
+    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "fairlens" / "hf"
+
+
 def _configure_cache() -> None:
-    cache = os.environ.get("FAIRLENS_CACHE") or load_config()["paths"]["cache_dir"]
-    cache_path = Path(cache)
+    cache = os.environ.get("FAIRLENS_CACHE") or load_config()["paths"].get("cache_dir")
+    cache_path = Path(cache).expanduser() if cache else default_cache_dir()
     try:
         cache_path.mkdir(parents=True, exist_ok=True)
     except OSError:  # configured drive missing on another machine -> project-local cache
@@ -60,6 +71,11 @@ def _configure_cache() -> None:
     os.environ.setdefault("TORCH_HOME", str(cache_path.parent / "torch"))
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure") and (stream.encoding or "").lower() not in {"utf-8", "utf8"}:
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
 
 _configure_cache()

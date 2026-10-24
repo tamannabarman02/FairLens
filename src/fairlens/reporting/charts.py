@@ -20,11 +20,14 @@ def style(fig: go.Figure, theme: str = "light", height: int = 340, legend: bool 
     fig.update_layout(
         height=height, margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter, system-ui, sans-serif", size=13, color=p["text"]), showlegend=legend,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)",
+                    font=dict(color=p["text"])),
         hoverlabel=dict(font_family="Inter"),
     )
-    fig.update_xaxes(gridcolor=p["grid"], zerolinecolor=p["grid"], linecolor=p["grid"], tickfont=dict(color=p["muted"]))
-    fig.update_yaxes(gridcolor=p["grid"], zerolinecolor=p["grid"], linecolor=p["grid"], tickfont=dict(color=p["muted"]))
+    fig.update_xaxes(gridcolor=p["grid"], zerolinecolor=p["grid"], linecolor=p["grid"], tickfont=dict(color=p["muted"]),
+                     title_font=dict(color=p["text"]))
+    fig.update_yaxes(gridcolor=p["grid"], zerolinecolor=p["grid"], linecolor=p["grid"], tickfont=dict(color=p["muted"]),
+                     title_font=dict(color=p["text"]))
     return fig
 
 

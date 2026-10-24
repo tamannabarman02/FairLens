@@ -1,0 +1,635 @@
+{
+  "id": "genai_output",
+  "kind": "text",
+  "title": "Generative AI and chatbot output evaluation",
+  "input": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+  "computed_at": "2026-10-24 07:14",
+  "analysis": {
+    "text": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+    "detector_results": {
+      "bert": {
+        "detector": "bert",
+        "display": "BERT",
+        "score": 0.8527432680130005,
+        "label": "biased",
+        "runtime_ms": 486.4770000131102,
+        "error": null
+      },
+      "deberta": {
+        "detector": "deberta",
+        "display": "DeBERTa",
+        "score": 0.16696856915950775,
+        "label": "neutral",
+        "runtime_ms": 1014.7037910064682,
+        "error": null
+      },
+      "bart_mnli": {
+        "detector": "bart_mnli",
+        "display": "BART-MNLI",
+        "score": 0.9883059859275818,
+        "label": "biased",
+        "runtime_ms": 1897.9748749989085,
+        "error": null
+      },
+      "rule_based": {
+        "detector": "rule_based",
+        "display": "Rule-based",
+        "score": 0.0,
+        "label": "neutral",
+        "runtime_ms": 1.2219589989399537,
+        "error": null,
+        "categories": {}
+      }
+    },
+    "ensemble_score": 0.5020044557750225,
+    "level": "Medium",
+    "spans": [],
+    "categories": [],
+    "sentences": [
+      {
+        "text": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+        "start": 0,
+        "end": 128,
+        "scores": {
+          "bert": 0.8527432680130005,
+          "deberta": 0.16696856915950775,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        }
+      }
+    ],
+    "runtime_ms": 3595.179833995644,
+    "missing_detectors": []
+  },
+  "mitigation": {
+    "original": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+    "decision": {
+      "decision": "ACCEPT",
+      "chosen": "flan_t5",
+      "chosen_text": "The surgeon thanked the nurse for her help, while the engineer explained his design to the secretary.",
+      "reason_code": "ALL_CHECKS_PASSED",
+      "reason": "Bias reduced and meaning, facts and fluency preserved.",
+      "verdicts": [
+        {
+          "candidate": "original",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS",
+            "LOW_CONFIDENCE"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": false
+          }
+        },
+        {
+          "candidate": "rule_based",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS",
+            "LOW_CONFIDENCE"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": false
+          }
+        },
+        {
+          "candidate": "flan_t5",
+          "decision": "ACCEPT",
+          "reasons": [
+            "ALL_CHECKS_PASSED"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": true,
+            "RESIDUAL_BIAS": true,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "qwen",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "LOW_CONFIDENCE"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": true,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": false
+          }
+        }
+      ],
+      "input_biased": true,
+      "attempts": 0
+    },
+    "candidates": [
+      {
+        "candidate": "original",
+        "text": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+        "changed": false,
+        "bias_before": 0.5020044595003128,
+        "bias_after": 0.5020044595003128,
+        "bias_reduction": 0.0,
+        "detector_scores_before": {
+          "bert": 0.8527435660362244,
+          "deberta": 0.16696828603744507,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        },
+        "detector_scores_after": {
+          "bert": 0.8527435660362244,
+          "deberta": 0.16696828603744507,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.42537184037790493,
+        "confidence_margin": 0.00400891900062561,
+        "uncertainty": 0.9233673808775922,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "entailment_both_ways": 1.0,
+        "contradiction": 0.0,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "surgeon",
+              "nurse",
+              "engineer",
+              "secretary"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS",
+          "LOW_CONFIDENCE"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": false
+        }
+      },
+      {
+        "candidate": "rule_based",
+        "text": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+        "changed": false,
+        "bias_before": 0.5020044595003128,
+        "bias_after": 0.5020044595003128,
+        "bias_reduction": 0.0,
+        "detector_scores_before": {
+          "bert": 0.8527435660362244,
+          "deberta": 0.16696828603744507,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        },
+        "detector_scores_after": {
+          "bert": 0.8527435660362244,
+          "deberta": 0.16696828603744507,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.42537184037790493,
+        "confidence_margin": 0.00400891900062561,
+        "uncertainty": 0.9233673808775922,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "entailment_both_ways": 1.0,
+        "contradiction": 0.0,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "surgeon",
+              "nurse",
+              "engineer",
+              "secretary"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS",
+          "LOW_CONFIDENCE"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": false
+        }
+      },
+      {
+        "candidate": "flan_t5",
+        "text": "The surgeon thanked the nurse for her help, while the engineer explained his design to the secretary.",
+        "changed": true,
+        "bias_before": 0.5020044595003128,
+        "bias_after": 0.43407878559082747,
+        "bias_reduction": 0.06792567390948534,
+        "detector_scores_before": {
+          "bert": 0.8527435660362244,
+          "deberta": 0.16696828603744507,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        },
+        "detector_scores_after": {
+          "bert": 0.7102701663970947,
+          "deberta": 0.03735865280032158,
+          "bart_mnli": 0.9886863231658936,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.4271072627069443,
+        "confidence_margin": 0.13184242881834507,
+        "uncertainty": 0.8611860482977718,
+        "semantic_similarity": 0.9560844898223877,
+        "entail_forward": 0.9735453724861145,
+        "entail_backward": 0.024295775219798088,
+        "entailment_both_ways": 0.024295775219798088,
+        "contradiction": 0.0065428344532847404,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "surgeon",
+              "nurse",
+              "engineer",
+              "secretary"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 0.8095238095238095,
+        "verdict": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "qwen",
+        "text": "The surgeon completed his procedure and expressed gratitude to the nurse for assistance, while the engineer presented his invention to the secretary.",
+        "changed": true,
+        "bias_before": 0.5020044595003128,
+        "bias_after": 0.4978923350572586,
+        "bias_reduction": 0.004112124443054199,
+        "detector_scores_before": {
+          "bert": 0.8527435660362244,
+          "deberta": 0.16696828603744507,
+          "bart_mnli": 0.9883059859275818,
+          "rule_based": 0.0
+        },
+        "detector_scores_after": {
+          "bert": 0.7630623579025269,
+          "deberta": 0.24189919233322144,
+          "bart_mnli": 0.9866077899932861,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.39452097641937467,
+        "confidence_margin": 0.004215329885482788,
+        "uncertainty": 0.8924133114766333,
+        "semantic_similarity": 0.9072821140289307,
+        "entail_forward": 0.9971875548362732,
+        "entail_backward": 0.9951826930046082,
+        "entailment_both_ways": 0.9951826930046082,
+        "contradiction": 0.00010957101767417043,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "surgeon",
+              "nurse",
+              "engineer",
+              "secretary"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0476190476190477,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "LOW_CONFIDENCE"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": false
+        }
+      }
+    ],
+    "rewrite_log": [
+      {
+        "rewriter": "rule_based",
+        "text": "The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.",
+        "runtime_ms": 2.104166997014545,
+        "prompt": null,
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      },
+      {
+        "rewriter": "flan_t5",
+        "text": "The surgeon thanked the nurse for her help, while the engineer explained his design to the secretary.",
+        "runtime_ms": 2094.8664159950567,
+        "prompt": "Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. Keep all facts, names, numbers and negations exactly. Return only the rewritten text. \n\nText: The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.\nRewritten text:",
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      },
+      {
+        "rewriter": "qwen",
+        "text": "The surgeon completed his procedure and expressed gratitude to the nurse for assistance, while the engineer presented his invention to the secretary.",
+        "runtime_ms": 1423.1853340024827,
+        "prompt": "<|im_start|>system\nYou are a careful editor who removes bias from text without changing its facts. Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. Keep all facts, names, numbers and negations exactly. Return only the rewritten text.<|im_end|>\n<|im_start|>user\nText: The surgeon finished his operation and thanked the nurse for her help, while the engineer explained his design to the secretary.<|im_end|>\n<|im_start|>assistant\n",
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      }
+    ],
+    "lowest_bias_choice": "flan_t5",
+    "runtime_ms": 8438.102958010859
+  },
+  "bias_score": 0.5020044557750225,
+  "decision": {
+    "decision": "ACCEPT",
+    "chosen": "flan_t5",
+    "chosen_text": "The surgeon thanked the nurse for her help, while the engineer explained his design to the secretary.",
+    "reason_code": "ALL_CHECKS_PASSED",
+    "reason": "Bias reduced and meaning, facts and fluency preserved.",
+    "verdicts": [
+      {
+        "candidate": "original",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS",
+          "LOW_CONFIDENCE"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": false
+        }
+      },
+      {
+        "candidate": "rule_based",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS",
+          "LOW_CONFIDENCE"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": false
+        }
+      },
+      {
+        "candidate": "flan_t5",
+        "decision": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "qwen",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "LOW_CONFIDENCE"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": false
+        }
+      }
+    ],
+    "input_biased": true,
+    "attempts": 0
+  },
+  "must_preserve_check": {
+    "surgeon": true,
+    "nurse": true,
+    "engineer": true,
+    "secretary": true
+  }
+}

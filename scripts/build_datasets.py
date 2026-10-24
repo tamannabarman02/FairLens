@@ -104,7 +104,7 @@ def build() -> None:
     cp_path = RAW / "crows_pairs_anonymized.csv"
     if not cp_path.exists():
         urllib.request.urlretrieve(CROWS_URL, cp_path)
-    cp = pd.read_csv(cp_path)
+    cp = pd.read_csv(cp_path, encoding="utf-8")
     sources["CrowS-Pairs"] = {"url": CROWS_URL, "sha256": hashlib.sha256(cp_path.read_bytes()).hexdigest(), "license": "CC BY-SA 4.0"}
     cp["pair_id"] = "cp:" + cp["Unnamed: 0"].astype(str)
     cp["bias_type_n"] = cp["bias_type"].map(lambda b: CROWS_TYPE.get(b, b))
@@ -154,7 +154,7 @@ def build() -> None:
     # leakage check across splits by group
     g = det.groupby("group_id")["split"].nunique()
     manifest["groups_spanning_splits"] = int((g > 1).sum())
-    (OUT / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2))
+    (OUT / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in manifest.items() if k != "detection_counts"}, indent=2))
     print(det.groupby(["split", "label"]).size().unstack())
     print(det.groupby(["source", "split"]).size().unstack())
