@@ -26,14 +26,36 @@ The owner's Mac was **not available** in this session, so every macOS item is PE
 Earlier UI smoke test (empty states only): 44/44 page renders without Streamlit exceptions, but each page logged two
 browser "404 Not Found" console errors (V4 UI audit finding), not yet investigated.
 
+## Stage 1 status (2026-10-24)
+
+| V4 item | Status | Evidence |
+|---|---|---|
+| 1.1 Install + tests on Windows and macOS | **VERIFIED on Windows** (fresh clone, `install.ps1`, no `PYTHONUTF8`: install exit 0, 52 passed). **macOS/Linux VERIFIED on GitHub runners** (`install.sh`, 52 passed). Physical Mac: PENDING | `D:/FairLens_cache/logs/clean_install_windows.log` (local), CI run 40035513386 |
+| 1.2 Device order CUDA -> MPS -> CPU + `FAIRLENS_DEVICE` + MPS fallback env in code | Implemented and unit-tested | `src/fairlens/hardware.py`, `tests/test_reproducibility.py` |
+| 1.2 acceptance: same outputs on each device | **FAILED for MPS on the GitHub macOS runner**: RoBERTa detector max score diff 0.644 (all 50 sentences); 7/8 model families differ (T5 matches); not batch- or attention-kernel related. Mitigation PC-09: numerical self-check rejects MPS (diff 0.236) and falls back to CPU automatically. Physical Mac and CUDA: PENDING | `outputs/audit/ci_device_final/`, `outputs/audit/ci_device_families/`, `outputs/audit/ci_device_selfcheck/` |
+| 1.2b No OS assumptions | **VERIFIED**: `tests/test_portability.py` (no encoding-less I/O, no drive letters, `.gitattributes`) passes on all three CI systems; cache default is per-user, D: kept only in gitignored `configs/local.yaml` | CI |
+| 1.2c CI on three systems | **VERIFIED green** (windows/macos/ubuntu) | `.github/workflows/tests.yml` |
+| 1.2d Runs shared as folders | **VERIFIED by test** (copied run folder appears without the database); `runs.sqlite` is now a rebuildable, untracked index | `tests/test_reproducibility.py::test_copied_run_folder_appears_without_database` |
+| 1.3 Dataset hashes, checkpoints to regenerate | **VERIFIED**: raw datasets and derived mitigation/gate sets rebuild byte-identically; manifest now lists derived sets. DistilBERT checkpoint exists locally only; DeBERTa must be trained | `datasets/processed/dataset_manifest.json` |
+| 1.4 Profiling | IN PROGRESS (first attempt stalled: launcher/pipe issues, fixed; DistilBERT 1.85 s/step, est. 20 min/epoch, peak 1.88 GB) | `outputs/runs/*-profile-*` |
+| 1.5 Uploads | Unit tests per loader incl. Windows encodings, DOCX tables (bug fixed), multi-column CSV, scanned PDF, oversized image: PASS. Browser flow per format: PENDING | `tests/test_ingestion.py` |
+| 1.6 Complete manifests + protocol log | **VERIFIED by test** (missing field fails); cache keys include revision + device; `docs/PROTOCOL_CHANGES.md` PC-01..PC-09 | `tests/test_reproducibility.py` |
+
+## Other work done ahead of its stage (code only, no results yet)
+G.1 no-change + LLM-judge baselines (unit-tested), judge validation script; G.2 policies wired into the gate benchmark;
+A.1/A.2/A.4/A.5 analysis script; A.3 human-evaluation guideline + blinded export/scoring (needs 2–3 human annotators);
+P.3 prior-work review (`docs/PRIOR_WORK.md`: gating rewrites is established practice, so no novelty claim for the idea);
+UI: FairLens Review page, Home entry cards, result labels + provenance, traceability test, device chip, 404 cause found
+(Streamlit deep-link probes, not a FairLens resource).
+
 ## Stage status (V4 order)
 | Stage | Status |
 |---|---|
-| 0 Audit | DONE (table above); macOS items PENDING (no Mac in this session) |
-| 1 Cross-platform setup and reproducibility | IN PROGRESS |
-| 2–7 | NOT STARTED; **no benchmark results exist** |
+| 0 Audit | DONE; macOS items now covered by CI runners, physical Mac PENDING |
+| 1 Cross-platform setup | MOSTLY DONE (1.4 running, 1.5 browser flows pending) |
+| 2–7 | NOT RUN; **no benchmark results exist yet** |
 
 ## Exact next steps
-1.1 torch platform markers + clean-venv install on Windows → 1.2 device order → 1.2b OS assumptions → 1.2c CI →
-1.2d run index from folders → 1.3 manifest for derived sets → 1.4 profiling + DeBERTa fix ladder → 1.5 uploads e2e →
-1.6 manifest fields test → D.1 label mapping → train DeBERTa → D.2 detection run → M.1/M.2 → G.1/G.2 → A.1–A.5 → I.1/I.2 → P.1–P.3, with UI (U.1–U.7) in separate commits.
+1.4 finish profiling + DeBERTa fix ladder decision -> train DeBERTa -> D.2 detection run -> select_prompts ->
+M.1/M.2 mitigation run + fact-extractor accuracy -> run_judge -> run_ablations (G.2, A.4) -> run_analysis (A.1, A.2, A.5)
+-> I.1 image run -> I.2 use cases -> P.1/P.2 results, limitations -> UI browser flows (1.5, U.7).
