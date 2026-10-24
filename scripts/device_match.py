@@ -25,6 +25,7 @@ SCORE_TOL = 1e-3
 
 def run_on(dev: str, texts: list[str]) -> dict:
     os.environ["FAIRLENS_DEVICE"] = dev
+    os.environ["FAIRLENS_SKIP_SELFCHECK"] = "1"  # compare raw devices here
     from fairlens.detection.hf_classifier import HFClassifierDetector
     from fairlens.mitigation.llm_adapters import Seq2SeqRewriter
     from fairlens.models import ModelManager, set_manager
@@ -65,12 +66,15 @@ def main():
     a = ap.parse_args()
     import pandas as pd
 
-    from fairlens.hardware import available_devices
+    from fairlens.hardware import accelerator_selfcheck, available_devices, device
 
     df = pd.read_parquet(ROOT / "datasets/processed/detection.parquet")
     texts = df[df.split == "val"].sample(50, random_state=0).text.tolist()
-    devs = available_devices()
+    devs = available_devices(check=False)
+    selfcheck = {d: accelerator_selfcheck(d) for d in devs if d != 'cpu'}
+    auto = device()
     res = {d: run_on(d, texts) for d in devs}
+    os.environ.pop("FAIRLENS_SKIP_SELFCHECK", None)
     cpu = res["cpu"]
     cmp = {}
     for d in devs:
@@ -92,7 +96,7 @@ def main():
                   "rewrite_mismatches": [{"cpu": c, d: o} for c, o, s in zip(cpu["rewrites"], res[d]["rewrites"], same) if not s]}
     out = {"platform": platform.platform(), "devices": devs, "detector": DETECTOR, "rewriter": REWRITER,
            "tolerance": {"score_abs": SCORE_TOL, "rewrite": "identical text"}, "n_detector": len(texts), "n_rewriter": 10,
-           "comparison_vs_cpu": cmp, "passed": all(c["score_within_tol"] and c["rewrite_identical_rate"] == 1.0 for c in cmp.values()) if cmp else None,
+           "comparison_vs_cpu": cmp, "selfcheck": selfcheck, "auto_device_with_selfcheck": auto, "passed": all(c["score_within_tol"] and c["rewrite_identical_rate"] == 1.0 for c in cmp.values()) if cmp else None,
            "note": "Only CPU available on this machine; nothing to compare." if not cmp else ""}
     p = Path(a.out) if a.out else ROOT / "outputs" / "audit" / f"device_match_{sys.platform}.json"
     p.parent.mkdir(parents=True, exist_ok=True)

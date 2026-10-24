@@ -1,0 +1,17 @@
+[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
+Key                     | Status     | 
+------------------------+------------+-
+vocab_transform.weight  | UNEXPECTED | 
+vocab_layer_norm.bias   | UNEXPECTED | 
+vocab_transform.bias    | UNEXPECTED | 
+vocab_layer_norm.weight | UNEXPECTED | 
+vocab_projector.bias    | UNEXPECTED | 
+pre_classifier.weight   | MISSING    | 
+pre_classifier.bias     | MISSING    | 
+classifier.weight       | MISSING    | 
+classifier.bias         | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+@@RESULT@@{"device": "cpu", "steps": 20, "median_s_per_step": 1.8456629999964207, "mean_s_per_step": 2.1463209249999635, "first_step_s": 1.7358631000024616, "hparams": {"lr": 5e-05, "epochs": 3, "batch_size": 16, "max_length": 128}, "trainable_params_m": 67.0, "est_epoch_min": 19.933160399961345, "peak_mb": 1879.4453125}

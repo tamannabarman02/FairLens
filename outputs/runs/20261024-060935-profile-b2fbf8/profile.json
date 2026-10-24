@@ -1,0 +1,7 @@
+{
+  "train:bert": {
+    "status": "timeout",
+    "error": "exceeded 1200 s",
+    "wall_s": 1865.2
+  }
+}

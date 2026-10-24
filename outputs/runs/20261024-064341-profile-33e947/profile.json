@@ -1,0 +1,20 @@
+{
+  "train:bert": {
+    "device": "cpu",
+    "steps": 20,
+    "median_s_per_step": 1.8456629999964207,
+    "mean_s_per_step": 2.1463209249999635,
+    "first_step_s": 1.7358631000024616,
+    "hparams": {
+      "lr": 5e-05,
+      "epochs": 3,
+      "batch_size": 16,
+      "max_length": 128
+    },
+    "trainable_params_m": 67.0,
+    "est_epoch_min": 19.933160399961345,
+    "peak_mb": 1879.4453125,
+    "status": "ok",
+    "wall_s": 59.8
+  }
+}

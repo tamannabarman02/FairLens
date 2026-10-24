@@ -1,7 +1,7 @@
 {
   "run_id": "20261024-060935-profile-b2fbf8",
   "kind": "profile",
-  "status": "running",
+  "status": "stopped",
   "started_at": "2026-10-24T00:39:37+00:00",
   "command": "profile_models.py --timeout 1200",
   "config": {
@@ -37,7 +37,9 @@
   "datasets": {
     "datasets/processed/detection.parquet": "7cbacdedf983ba1c"
   },
-  "models": {},
+  "models": {
+    "train:bert": null
+  },
   "hardware": {
     "python": "3.11.9",
     "os": "Windows 10 (10.0.26200)",
@@ -58,5 +60,8 @@
   "platform": "Windows-10-10.0.26200-SP0",
   "python": "3.11.9",
   "output_dir": "outputs/runs/20261024-060935-profile-b2fbf8",
-  "artifacts": {}
+  "artifacts": {
+    "profile.json": "outputs/runs/20261024-060935-profile-b2fbf8/profile.json"
+  },
+  "stop_note": "Stopped manually: train:bert child stalled to the 1200 s timeout when launched with captured pipes while other jobs ran; profiler fixed in a later commit and re-run."
 }

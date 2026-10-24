@@ -106,16 +106,55 @@ def _mps_available() -> bool:
         return False
 
 
-def available_devices() -> list[str]:
+_SELFCHECK: dict[str, dict] = {}
+
+
+def accelerator_selfcheck(dev: str, tol: float = 1e-3) -> dict:
+    """Run a small fixed transformer encoder layer on CPU and on `dev` and compare outputs.
+
+    On a GitHub macOS (virtualised) runner, MPS reported available but every encoder/decoder model except T5
+    produced different outputs from CPU (outputs/audit/ci_device_families/). A device that fails this check is
+    not used automatically. FAIRLENS_SKIP_SELFCHECK=1 disables the check."""
+    if dev in _SELFCHECK:
+        return _SELFCHECK[dev]
+    if os.environ.get("FAIRLENS_SKIP_SELFCHECK") == "1":
+        _SELFCHECK[dev] = {"ok": True, "skipped": True}
+        return _SELFCHECK[dev]
+    import torch
+
+    g = torch.Generator().manual_seed(0)
+    layer = torch.nn.TransformerEncoderLayer(d_model=64, nhead=4, dim_feedforward=128, dropout=0.0, activation="gelu",
+                                             batch_first=True).eval()
+    with torch.no_grad():
+        for p in layer.parameters():
+            p.copy_(torch.randn(p.shape, generator=g) * 0.1)
+        x = torch.randn(2, 12, 64, generator=g)
+        ref = layer(x)
+        try:
+            out = layer.to(dev)(x.to(dev)).cpu()
+            diff = float((out - ref).abs().max())
+            res = {"ok": diff <= tol, "max_abs_diff": diff}
+        except Exception as exc:  # noqa: BLE001
+            res = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    _SELFCHECK[dev] = res
+    if not res["ok"]:
+        import warnings
+
+        warnings.warn(f"{dev} failed the FairLens numerical self-check ({res}); falling back to the next device", stacklevel=2)
+    return res
+
+
+def available_devices(check: bool = True) -> list[str]:
+    """Usable devices in preference order. With check=True an accelerator must pass accelerator_selfcheck."""
     out = []
     try:
         import torch
 
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and (not check or accelerator_selfcheck("cuda")["ok"]):
             out.append("cuda")
     except ImportError:
         pass
-    if _mps_available():
+    if _mps_available() and (not check or accelerator_selfcheck("mps")["ok"]):
         out.append("mps")
     return out + ["cpu"]
 

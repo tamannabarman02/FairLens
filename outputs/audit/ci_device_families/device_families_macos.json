@@ -1,0 +1,66 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "torch": "2.14.1",
+  "devices": [
+    "mps"
+  ],
+  "tolerance": 0.001,
+  "families": {
+    "distilbert": {
+      "model": "distilbert-base-uncased",
+      "mps": {
+        "max_abs_diff": 8.782214164733887,
+        "match": false
+      }
+    },
+    "roberta": {
+      "model": "himel7/bias-detector",
+      "mps": {
+        "max_abs_diff": 1.4229307174682617,
+        "match": false
+      }
+    },
+    "deberta-v2": {
+      "model": "microsoft/deberta-v3-small",
+      "mps": {
+        "max_abs_diff": 20.57901954650879,
+        "match": false
+      }
+    },
+    "bart": {
+      "model": "facebook/bart-large-mnli",
+      "mps": {
+        "max_abs_diff": 4.17960262298584,
+        "match": false
+      }
+    },
+    "bert(minilm)": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "mps": {
+        "max_abs_diff": 6.2280073165893555,
+        "match": false
+      }
+    },
+    "deberta-v2(nli)": {
+      "model": "cross-encoder/nli-deberta-v3-small",
+      "mps": {
+        "max_abs_diff": 5.317314624786377,
+        "match": false
+      }
+    },
+    "t5": {
+      "model": "google/flan-t5-base",
+      "mps": {
+        "max_abs_diff": 7.2479248046875e-05,
+        "match": true
+      }
+    },
+    "qwen2": {
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "mps": {
+        "max_abs_diff": 30.3107852935791,
+        "match": false
+      }
+    }
+  }
+}

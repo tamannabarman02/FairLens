@@ -56,11 +56,12 @@ def main():
     a = ap.parse_args()
     import pandas as pd
 
-    from fairlens.hardware import available_devices
+    from fairlens.hardware import accelerator_selfcheck, available_devices, device
 
     df = pd.read_parquet(ROOT / "datasets/processed/detection.parquet")
     texts = df[df.split == "val"].sample(8, random_state=1).text.tolist()
-    devs = [d for d in available_devices() if d != "cpu"]
+    devs = [d for d in available_devices(check=False) if d != "cpu"]
+    selfcheck = {d: accelerator_selfcheck(d) for d in devs}
     res = {}
     for fam, (mid, kind) in MODELS.items():
         try:
@@ -74,7 +75,7 @@ def main():
         print(fam, res[fam], flush=True)
     import torch
 
-    out = {"platform": platform.platform(), "torch": torch.__version__, "devices": devs, "tolerance": TOL, "families": res}
+    out = {"platform": platform.platform(), "torch": torch.__version__, "devices": devs, "selfcheck": selfcheck, "auto_device_with_selfcheck": device(), "tolerance": TOL, "families": res}
     Path(a.out).write_text(json.dumps(out, indent=2), encoding="utf-8")
 
 
