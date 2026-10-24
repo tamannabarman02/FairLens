@@ -12,21 +12,23 @@ def render():
       <p>FairLens finds biased language with four detectors, proposes neutral rewrites with two language models and a
       rule baseline, and then checks every rewrite with the Reliability Gate before anything is accepted.</p></div>""")
     st.write("")
-    b1, b2, _ = st.columns([1.2, 1.3, 3.5])
-    if b1.button("Analyze Text", type="primary", icon=":material/notes:", use_container_width=True):
-        go("Text Analysis")
-    if b2.button("Analyze Image", icon=":material/image:", use_container_width=True):
-        go("Image Analysis")
-    st.write("")
-    cols = st.columns(4)
-    feats = [
-        ("layers", "Multi-Model Analysis", "Fine-tuned BERT and DeBERTa, zero-shot BART-MNLI and a transparent rule baseline score every sentence."),
-        ("wand", "Intelligent Mitigation", "FLAN-T5, Qwen2.5-Instruct and a rule rewriter propose neutral wording with a shared prompt family."),
-        ("shield", "Reliability Verification", "The Gate checks meaning, entailment, facts, detector agreement and fluency: accept, retry, reject or human review."),
-        ("image", "Multimodal Support", "BLIP and Florence-2 captions are scored for image alignment and piped into the text detectors."),
+    entries = [
+        ("shield", "FairLens Review", "Check a job advert end to end: flags, rewrites, fact checks, decision, report.", "PDF (text layer), DOCX, TXT or paste"),
+        ("text", "Text Analysis", "Score any text with four detectors and see the flagged phrases.", "Paste, TXT, PDF, DOCX, CSV · 10 MB"),
+        ("image", "Image Analysis", "Caption an image with BLIP and Florence-2 and check the captions.", "JPG, PNG, GIF · 10 MB"),
+        ("wand", "Mitigation", "Compare rule-based, FLAN-T5 and Qwen rewrites side by side.", "Uses the text analysed last"),
+        ("check", "Reliability Gate", "See why a rewrite is accepted, retried, rejected or sent to a person.", "Uses the rewrites generated last"),
+        ("chart", "Benchmarks", "Research results, each read from a stored run with its run ID.", "Completed runs only"),
+        ("layers", "Use Cases", "Six demo scenarios run through the full pipeline.", "Synthetic demo inputs"),
     ]
-    for col, (ic, t, d) in zip(cols, feats):
-        col.markdown(C.card(t, d, icon_name=ic), unsafe_allow_html=True)
+    for row in (entries[:4], entries[4:]):
+        cols = st.columns(4)
+        for col, (ic, t, d, fmt) in zip(cols, row):
+            with col:
+                C.render(C.card(t, d, icon_name=ic, extra=f'<div class="fl-sub" style="font-size:12px;margin-top:8px">{C.esc(fmt)}</div>'))
+                if st.button(f"Open {t}", key=f"entry_{t}", use_container_width=True, type="primary" if t == "FairLens Review" else "secondary"):
+                    go(t)
+        st.write("")
     st.write("")
     C.render(C.pipeline_cards([("text", "Input", "Text, PDF, DOCX, CSV or image"), ("lens", "Bias Detection", "4 detectors + explanations"),
                                ("wand", "Mitigation", "Rule, FLAN-T5, Qwen"), ("shield", "Reliability Gate", "Signals → decision + reason"),

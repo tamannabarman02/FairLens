@@ -219,3 +219,32 @@ def note(text: str, kind: str = "note") -> str:
 
 def kv(pairs: list[tuple[str, str]]) -> str:
     return '<div class="fl-kv">' + "".join(f'<div class="k">{esc(k)}</div><div class="v">{esc(v)}</div>' for k, v in pairs) + "</div>"
+
+
+RESULT_LABELS = {"completed": ("Completed run", "green"), "pending": ("Pending", "grey"), "failed": ("Failed run", "red"),
+                 "illustrative": ("Illustrative example", "amber")}
+
+
+def result_label(kind: str) -> str:
+    """One of the four V4 result labels: completed, pending, failed, illustrative."""
+    text, tone = RESULT_LABELS[kind]
+    return badge(text, tone)
+
+
+def provenance(summary: dict, manifest: dict | None = None) -> str:
+    """'Completed run' label plus run ID, models (with revisions), dataset hashes and device, from the run files."""
+    parts = [result_label("completed"), f'<span class="fl-mono">run {esc(summary.get("run_id", "?"))}</span>']
+    if manifest:
+        models = manifest.get("models") or {}
+        if models:
+            parts.append("models: " + esc(", ".join(f"{k}={v}" for k, v in list(models.items())[:6])))
+        data = manifest.get("datasets") or {}
+        if data:
+            parts.append("data: " + esc(", ".join(f"{k.rsplit('/', 1)[-1]}#{v[:8]}" for k, v in data.items())))
+        dev = manifest.get("device") or (manifest.get("hardware") or {}).get("device")
+        if dev:
+            parts.append(f"device: {esc(dev)}")
+        if manifest.get("git_commit"):
+            parts.append(f"git {esc(manifest['git_commit'])}")
+    return '<div class="fl-sub" style="font-size:12px;margin:2px 0 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">' + \
+        " · ".join(parts) + "</div>"

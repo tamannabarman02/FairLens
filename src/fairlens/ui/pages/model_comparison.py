@@ -4,13 +4,21 @@ from ...experiments import jobs
 from ...reporting import charts
 from .. import components as C
 from ..common import theme
-from ..results import latest_summary
+from ..results import failed_runs, latest_with_manifest
 
 SRC_LABEL = {"babe": "BABE (media bias)", "stereoset_inter": "StereoSet inter", "stereoset_intra": "StereoSet intra",
              "crows_pairs": "CrowS-Pairs"}
 
 
+def failed_note(kind: str) -> None:
+    bad = failed_runs(kind)
+    if bad:
+        C.render(f'<div style="margin:4px 0 8px">{C.result_label("failed")} ' + ", ".join(
+            f'<span class="fl-mono">{C.esc(r["run_id"])}</span> ({C.esc(r["status"])})' for r in bad[:3]) + "</div>")
+
+
 def run_button(job: str, label: str, key: str):
+    C.render(f'<div style="margin:6px 0">{C.result_label("pending")} no completed run yet</div>')
     r = jobs.running(job)
     if r:
         st.info(f"{label} is running (job {r['id']}). Progress is on Experiments & Exports.")
@@ -22,13 +30,16 @@ def run_button(job: str, label: str, key: str):
 def render():
     C.page_header("Model Comparison", "Every detector is evaluated on the same held-out test split with the same metrics and "
                                       "threshold (0.5).", "Detection benchmark")
-    s = latest_summary("benchmark_detection", "detection_summary.json")
+    s, man = latest_with_manifest("benchmark_detection", "detection_summary.json")
+    failed_note("benchmark_detection")
     if not s:
         C.render(C.empty_state("No detection benchmark yet", "Run the benchmark to fill this page with real results."))
         run_button("detection", "Run detection benchmark", "mc_run")
         return
     ok = {k: v for k, v in s["detectors"].items() if v.get("status") == "ok"}
-    st.caption(f"Run {s['run_id']} · test n = {s['n_test']} · finished {s.get('_finished_at') or '-'}")
+    C.render(C.provenance(s, man))
+    st.caption(f"Test n = {s['n_test']} (PC-08 excluded {s.get('excluded_near_duplicates', {}).get('n', 0)} near-duplicates) · "
+               f"finished {s.get('_finished_at') or '-'}")
     names = [v["display"] for v in ok.values()]
     t1, t2, t3, t4 = st.tabs(["Performance Metrics", "Runtime & Resources", "Calibration", "Confusion Matrices"])
     with t1:

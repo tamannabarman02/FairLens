@@ -58,3 +58,16 @@ def use_case_results() -> dict[str, dict]:
     if not d.exists():
         return {}
     return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in d.glob("*.json")}
+
+
+def latest_with_manifest(kind: str, filename: str) -> tuple[dict | None, dict | None]:
+    """(summary, manifest) of the latest completed run of `kind`, or (None, None)."""
+    r = latest_run(kind)
+    if not r:
+        return None, None
+    s = latest_summary(kind, filename)
+    return s, (load_manifest(r) if s else None)
+
+
+def failed_runs(kind: str) -> list[dict]:
+    return [r for r in list_runs(kind) if r["status"] in {"failed", "stopped"}]

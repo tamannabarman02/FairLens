@@ -29,7 +29,9 @@ def render():
         for col, case in zip(cols, cases[i:i + 2]):
             with col:
                 res = done.get(case["id"])
-                body = (f'<div class="fl-sub" style="font-size:12.5px">For: {C.esc(case["users"])}</div>'
+                body = (f'<div style="margin-bottom:6px">{C.result_label("illustrative")} '
+                        f'{C.result_label("completed") if res else C.result_label("pending")}</div>'
+                        f'<div class="fl-sub" style="font-size:12.5px">For: {C.esc(case["users"])}</div>'
                         f'<p style="margin-top:6px"><b>Problem.</b> {C.esc(case["problem"])}</p>'
                         f'<div class="fl-quote" style="margin-top:8px">{C.esc(case["input"])}</div>')
                 if res and res.get("kind") == "text":

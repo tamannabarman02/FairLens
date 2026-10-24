@@ -11,13 +11,14 @@ st.set_page_config(page_title="FairLens", page_icon="assets/logo.svg", layout="w
 from fairlens.ui import components as C  # noqa: E402
 from fairlens.ui import state  # noqa: E402
 from fairlens.ui.pages import (about, benchmarks, error_analysis, experiments, gate, home, image_analysis,  # noqa: E402
-                               mitigation, model_comparison, text_analysis, use_cases)
+                               mitigation, model_comparison, review, text_analysis, use_cases)
 
 state.init()
 C.inject_css(st.session_state.theme)
 
 MAIN = [
     st.Page(home.render, title="Home", icon=":material/home:", url_path="home", default=True),
+    st.Page(review.render, title="FairLens Review", icon=":material/fact_check:", url_path="review"),
     st.Page(text_analysis.render, title="Text Analysis", icon=":material/notes:", url_path="text"),
     st.Page(mitigation.render, title="Mitigation", icon=":material/auto_fix_high:", url_path="mitigation"),
     st.Page(gate.render, title="Reliability Gate", icon=":material/verified_user:", url_path="gate"),

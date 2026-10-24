@@ -3,8 +3,8 @@ import streamlit as st
 from ...reporting import charts
 from .. import components as C
 from ..common import fmt, fmt_pct, theme
-from ..results import latest_summary
-from .model_comparison import run_button
+from ..results import latest_with_manifest
+from .model_comparison import failed_note, run_button
 
 POLICY_LABEL = {"fairlens_gate_tuned": "FairLens Gate (val-tuned)", "fairlens_gate_default": "FairLens Gate (default rules)",
                 "learned_logreg": "Learned gate (logistic)", "learned_tree": "Learned gate (tree)", "lowest_bias": "Lowest bias score",
@@ -19,10 +19,10 @@ def ci_txt(d):
 def render():
     C.page_header("Benchmarks & Results", "Headline results from completed runs. Every number is read from run files in "
                                           "<span class='fl-mono'>outputs/runs/</span>.", "Research results")
-    det = latest_summary("benchmark_detection", "detection_summary.json")
-    mit = latest_summary("benchmark_mitigation", "mitigation_summary.json")
-    gate = latest_summary("benchmark_gate", "gate_summary.json")
-    img = latest_summary("benchmark_image", "image_summary.json")
+    det, det_m = latest_with_manifest("benchmark_detection", "detection_summary.json")
+    mit, mit_m = latest_with_manifest("benchmark_mitigation", "mitigation_summary.json")
+    gate, gate_m = latest_with_manifest("benchmark_gate", "gate_summary.json")
+    img, img_m = latest_with_manifest("benchmark_image", "image_summary.json")
 
     tiles = []
     if det:
@@ -72,10 +72,11 @@ def render():
 
     t1, t2, t3, t4 = st.tabs(["Text Detection", "Mitigation Results", "Reliability Gate", "Image Analysis"])
     with t1:
+        failed_note("benchmark_detection")
         if not det:
             run_button("detection", "Run detection benchmark", "b_det")
         else:
-            st.caption(f"Run {det['run_id']}")
+            C.render(C.provenance(det, det_m))
             ok = {k: v for k, v in det["detectors"].items() if v.get("status") == "ok"}
             C.render(C.html_table([{"Detector": v["display"], "Macro-F1": v["metrics"]["macro_f1"],
                                     "F1 [95% CI]": f"{v['ci']['f1']['value']:.3f} [{v['ci']['f1']['lo']:.3f}, {v['ci']['f1']['hi']:.3f}]",
@@ -99,10 +100,12 @@ def render():
                 st.caption("WinoBias sentences are neutral event descriptions: a good detector flags neither condition (low FPR) and shows "
                            "no pro/anti gap. Preference = share of pairs where the stereotypical sentence scores higher.")
     with t2:
+        failed_note("benchmark_mitigation")
         if not mit:
             run_button("mitigation", "Run mitigation benchmark", "b_mit")
         else:
-            st.caption(f"Run {mit['run_id']} · {mit['n_inputs']} inputs ({mit['n_biased_gold']} biased, {mit['n_neutral_gold']} neutral by gold label)")
+            C.render(C.provenance(mit, mit_m))
+            st.caption(f"{mit['n_inputs']} inputs ({mit['n_biased_gold']} biased, {mit['n_neutral_gold']} neutral by gold label)")
             rows = []
             for k, v in mit["rewriters"].items():
                 if k == "original":
@@ -124,10 +127,12 @@ def render():
             r = mit["retry"]
             st.caption(f"Strict retries: {r['inputs_retried']} inputs retried, {r['accepted_after_retry']} accepted after retry.")
     with t3:
+        failed_note("benchmark_gate")
         if not gate:
             run_button("gate", "Run gate benchmark + ablations", "b_gate")
         else:
-            st.caption(f"Run {gate['run_id']} · {gate['n_inputs']} inputs × {len(gate['seeds'])} perturbation seeds · test-split gold: {gate['gold_distribution_test']}")
+            C.render(C.provenance(gate, gate_m))
+            st.caption(f"{gate['n_inputs']} inputs × {len(gate['seeds'])} perturbation seeds · test-split gold: {gate['gold_distribution_test']}")
             st.markdown("##### Gate vs. simpler selection methods (input level, test split)")
             sel = gate["selection"]
             labels = [POLICY_LABEL.get(k, k) for k in sel]
@@ -169,10 +174,12 @@ def render():
             st.caption("A signal adds measurable value if removing it raises unsafe accepts with a CI excluding 0. Signals whose CI "
                        "includes 0 showed no measurable value on this set; that is reported as a negative result.")
     with t4:
+        failed_note("benchmark_image")
         if not img:
             run_button("image", "Run image experiment", "b_img")
         else:
-            st.caption(f"Run {img['run_id']} · {img['n_images']} images. {img['scope_note']}")
+            C.render(C.provenance(img, img_m))
+            st.caption(f"{img['n_images']} images. {img['scope_note']}")
             rows = [{"Captioner": v["display"], "CLIP similarity [95% CI]": ci_txt(v["clip_similarity"]), "Words": v["mean_words"],
                      "Detail coverage": v["detail_coverage"]["mean"], "Flagged biased": v["flagged_rate"],
                      "Gendered terms (person images)": v["gender_term_rate_person_images"], "Unverifiable attributes": v["unsupported_attribute_rate"],
