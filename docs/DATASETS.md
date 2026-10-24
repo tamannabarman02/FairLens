@@ -15,6 +15,26 @@ each measures a different thing, so results are always reported per source as we
 | **WNC** (Wiki Neutrality Corpus, Pryzant et al., 2020) | (CC BY-SA) | Biased -> neutralised Wikipedia edits (parallel) | **Not used: blocked.** The Stanford download host did not respond and the only HF mirror (`reza-alipour/WNC`) is gated (manual approval). BABE substitutes as the sentence-level biased-language corpus | Its absence means no large human-written parallel rewrite corpus is available; see references below |
 | **COCO 2017 val** (Lin et al., 2014) | Annotations CC BY 4.0; images under per-image Flickr licences (recorded per image) | Image captioning; 5 human reference captions per image | 60 images with the `person` category + 20 without (seeded), used for the captioning experiment. Metadata is used only to select/describe the set; no demographic inference | Western-centric photo distribution; reference captions themselves contain gendered wording |
 
+## 1b. Label mapping (V4 D.1, reviewed 2026-10-24 before the first detection run)
+
+Shared binary label: **1 = the sentence expresses or relies on a stereotype or biased framing; 0 = it does not**, as
+judged by each source's own annotation. The sources are not equivalent, so classification metrics are always
+reported **per source** as well as pooled, and pair-preference results are never mixed into classification metrics.
+
+| Source | Unit in the source | Source label | FairLens label | Used for |
+|---|---|---|---|---|
+| BABE | single sentence | `label` 1 biased / 0 non-biased (expert majority) | 1 / 0 unchanged | classification (train/val/test) |
+| StereoSet intra/inter | item = context + 3 options | stereotype / anti-stereotype / unrelated | stereotype → 1, anti-stereotype → 0, unrelated → not labelled | classification; **pair probe** stereotype > anti, stereotype > unrelated |
+| CrowS-Pairs | minimal pair | `stereo` / `antistereo` direction | `stereo` pairs only: `sent_more` → 1, `sent_less` → 0 | classification; **pair probe** (both directions) |
+| WinoBias | single sentence (pro / anti) | coreference condition | none (all neutral) | **probe only**: FPR and pro−anti gap |
+
+Known validity limits of the mapping: StereoSet anti-stereotypes are often still generalisations, and CrowS
+`sent_less` often repeats a generalisation about another group (Blodgett et al., 2021). The minimal-pair labels
+therefore test whether a detector separates the stereotype-consistent member of a pair, which is harder and noisier
+than BABE's sentence-level labels. This is why per-source results are reported separately.
+
+Test-set exclusion PC-08: 4 test items whose normalised text also appears in train/val are dropped from test metrics.
+
 ## 2. Unified detection schema (`datasets/processed/detection.parquet`)
 
 Columns: `text, label, bias_type, source, split, group_id` (+ `biased_words` for BABE, `subset`).

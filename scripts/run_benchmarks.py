@@ -91,13 +91,19 @@ def probe_texts() -> list[str]:
 
 def run_detection(keys: list[str], zs_val_n: int, skip_probes: bool) -> None:
     det_df = pd.read_parquet(PROC / "detection.parquet")
-    test, val = det_df[det_df.split == "test"].reset_index(drop=True), det_df[det_df.split == "val"]
+    # PC-08: drop test items whose normalised text (lower-case, punctuation/encoding stripped) also occurs in train/val.
+    norm = det_df.text.str.lower().str.replace(r"\W+", " ", regex=True).str.strip()
+    seen = set(norm[det_df.split != "test"])
+    near_dup = (det_df.split == "test") & norm.isin(seen)
+    excluded = det_df[near_dup].text.tolist()
+    test, val = det_df[(det_df.split == "test") & ~near_dup].reset_index(drop=True), det_df[det_df.split == "val"]
     cache = ScoreCache()
     tracker = RunTracker("benchmark_detection", config={"detectors": keys, "zs_val_n": zs_val_n, "threshold": 0.5,
                                                         "timing_subset": 100}, seed=0,
                          dataset_files=[PROC / "detection.parquet", PROC / "winobias_probe.parquet",
                                         PROC / "crows_pairs.parquet", PROC / "stereoset_pairs.parquet"])
-    summary: dict = {"run_id": tracker.run_id, "n_test": len(test), "detectors": {}}
+    summary: dict = {"run_id": tracker.run_id, "n_test": len(test), "detectors": {},
+                     "excluded_near_duplicates": {"protocol": "PC-08", "n": len(excluded), "texts": excluded}}
     scores = pd.DataFrame({"text": test.text, "label": test.label, "source": test.source, "bias_type": test.bias_type})
     ptexts = [] if skip_probes else probe_texts()
     timing = test.sample(100, random_state=1).text.tolist()
