@@ -83,6 +83,50 @@ def test_baselines(fake_detectors, fake_suite):
     assert baselines.gate_policy(cfg())(s) == "good"
 
 
+def test_no_change_baseline(fake_detectors, fake_suite):
+    s = list(sigs(fake_detectors, fake_suite, {"good": GOOD}).values())
+    assert baselines.no_change(s) == "original"
+
+
+def test_llm_judge_baseline(fake_detectors, fake_suite):
+    s = list(sigs(fake_detectors, fake_suite, {"good": GOOD, "bad": BAD_NUM}).values())
+    pol = baselines.llm_judge_policy({"good": 0.9, "bad": 0.2}, threshold=0.5)
+    assert pol(s) == "good"
+    assert baselines.llm_judge_policy({"good": 0.4, "bad": 0.3}, threshold=0.5)(s) is None  # defer
+    neutral = list(sigs(fake_detectors, fake_suite, {"p": "The committee passed the budget on Tuesday."}, original=NEUTRAL).values())
+    assert baselines.llm_judge_policy({"p": 0.99}, 0.5)(neutral) == "original"  # same input check as the Gate
+
+
+def test_llm_judge_scores_yes_no(monkeypatch):
+    """Judge maps next-token logits for Yes/No to P(yes); checked with a tiny stand-in model."""
+    import torch
+
+    from fairlens.reliability_gate import judge as J
+
+    class Tok:
+        def encode(self, w, add_special_tokens=False):
+            return [1] if w.strip().lower() == "yes" else [2] if w.strip().lower() == "no" else [0]
+
+        def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True):
+            return msgs[-1]["content"]
+
+        def __call__(self, text, return_tensors="pt"):
+            return {"input_ids": torch.tensor([[0, 0]])}
+
+    class Model:
+        device = "cpu"
+
+        def __call__(self, **kw):
+            logits = torch.zeros(1, 2, 3)
+            logits[0, -1, 1], logits[0, -1, 2] = 2.0, 0.0
+            return type("O", (), {"logits": logits})
+
+    j = J.LLMJudge("dummy")
+    monkeypatch.setattr(j, "_load", lambda: (Tok(), Model()))
+    p = j.p_yes("a", "b")
+    assert abs(p - 1 / (1 + 2.718281828 ** -2)) < 1e-6
+
+
 def test_learned_gate_fits():
     import numpy as np
 
