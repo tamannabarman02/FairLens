@@ -225,7 +225,8 @@ def summarise(cand: pd.DataFrame, sigs, dec, static, label, cfg, rewriters) -> d
 
     first_llm = next((k for k in rewriters if k != "rule_based"), "rule_based")
     policies = {"fairlens_gate": None, "fairlens_gate_retry": None, "lowest_bias": B.lowest_bias,
-                "highest_similarity": B.highest_similarity, f"always_{first_llm}": B.always_first(first_llm)}
+                "highest_similarity": B.highest_similarity, f"always_{first_llm}": B.always_first(first_llm),
+                "no_change": B.no_change}
     policies.update({f"random_s{s}": B.random_policy(s) for s in range(5)})
     by_input = {iid: {r.candidate: r for r in g.itertuples()} for iid, g in cand.groupby("input_id")}
     pol_out = {}

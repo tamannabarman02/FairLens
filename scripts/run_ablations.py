@@ -114,6 +114,22 @@ def learned_choose(model: LearnedGate):
     return f
 
 
+def load_judge() -> dict | None:
+    """Frozen judge (prompt + threshold chosen on val) and its scores, from the latest judge_validation run."""
+    from fairlens.experiments.tracking import latest_run, load_manifest
+
+    r = latest_run("judge_validation")
+    if not r:
+        return None
+    d = Path(r["manifest_path"]).parent
+    v = json.loads((d / "judge_validation.json").read_text(encoding="utf-8"))
+    sc = pd.read_parquet(d / "judge_scores.parquet")
+    m = load_manifest(r)
+    return {"run_id": r["run_id"], "prompt": v["chosen_prompt"], "threshold": v["threshold"],
+            "val_agreement": m.get("metrics", {}).get("val_all_seeds"),
+            "scores": {(o, t): p for o, t, p in zip(sc.input_text, sc.candidate_text, sc.p_yes)}}
+
+
 def tune_rules(val: pd.DataFrame, base: GateConfig) -> tuple[GateConfig, list[dict]]:
     grid = {"min_semantic_similarity": [0.6, 0.7, 0.8, 0.9], "entailment_mode": ["both", "forward"],
             "min_entailment_prob": [0.3, 0.5, 0.7], "min_bias_reduction": [0.05, 0.15, 0.25],
@@ -168,6 +184,18 @@ def main():
     policies = {"fairlens_gate_default": rule_choose(base), "fairlens_gate_tuned": rule_choose(tuned),
                 "learned_logreg": learned_choose(learned["logreg"]), "learned_tree": learned_choose(learned["tree"]),
                 "lowest_bias": lambda s, g: B.lowest_bias(s), "highest_similarity": lambda s, g: B.highest_similarity(s)}
+    policies["no_change"] = lambda s, g: B.no_change(s)
+    judge = load_judge()
+    if judge:
+        jscores, jthr = judge["scores"], judge["threshold"]
+        summary["judge"] = {k: judge[k] for k in ["run_id", "prompt", "threshold", "val_agreement"]}
+
+        def judge_pol(s, g):
+            per = {c: jscores.get((g.input_text.iloc[0], t)) for c, t in zip(g.candidate, g.candidate_text)}
+            return B.llm_judge_policy({c: v for c, v in per.items() if v is not None}, jthr, base.biased_input_threshold)(s)
+        policies["llm_judge"] = judge_pol
+    else:
+        summary["judge"] = {"status": "no completed judge_validation run; LLM-judge baseline not evaluated"}
     for k in range(5):
         pol = B.random_policy(100 + k)
         policies[f"random_s{k}"] = lambda s, g, pol=pol: pol(s)
@@ -176,7 +204,7 @@ def main():
     sel["random_mean"] = {m: {"mean": float(np.mean([sel[k][m]["mean"] for k in rnd]))} for m in
                           ["success", "harmful_selection", "defer", "unnecessary_change_neutral"]}
     ref = sel["fairlens_gate_tuned"]
-    for n in ["lowest_bias", "highest_similarity", "fairlens_gate_default"]:
+    for n in [k for k in sel if k != "fairlens_gate_tuned" and not k.startswith("random")]:
         sel[n]["diff_success_vs_tuned_gate"] = M.paired_bootstrap_diff(sel[n]["_succ"], ref["_succ"])
         sel[n]["diff_harm_vs_tuned_gate"] = M.paired_bootstrap_diff(sel[n]["_harm"], ref["_harm"])
     summary["selection"] = {k: {m: v for m, v in d.items() if not m.startswith("_")} for k, d in sel.items() if k not in rnd}
