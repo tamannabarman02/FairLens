@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -217,10 +218,15 @@ def main():
         print(f"== {k}", flush=True)
         t0 = time.perf_counter()
         try:
-            p = subprocess.run([sys.executable, __file__, "--child", k, "--n", str(a.n), "--steps", str(a.steps)],
-                               capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=ROOT, timeout=a.timeout)
-            line = next((l for l in p.stdout.splitlines() if l.startswith("@@RESULT@@")), None)
-            rec = json.loads(line[10:]) if line else {"status": "failed", "error": (p.stderr or p.stdout)[-600:]}
+            # child output goes to a log file (no pipes, no inherited stdin): avoids stalls seen with captured pipes
+            child_log = tracker.dir / f"child_{k.replace(':', '_').replace('+', '_')}.log"
+            with open(child_log, "w", encoding="utf-8") as fh:
+                subprocess.run([sys.executable, __file__, "--child", k, "--n", str(a.n), "--steps", str(a.steps)],
+                               stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=ROOT, timeout=a.timeout,
+                               env={**os.environ, "HF_HUB_DISABLE_PROGRESS_BARS": "1", "TQDM_DISABLE": "1"})
+            text = child_log.read_text(encoding="utf-8", errors="replace")
+            line = next((l for l in text.splitlines() if l.startswith("@@RESULT@@")), None)
+            rec = json.loads(line[10:]) if line else {"status": "failed", "error": text[-600:]}
         except subprocess.TimeoutExpired:
             rec = {"status": "timeout", "error": f"exceeded {a.timeout} s"}
         rec.setdefault("status", "ok")
