@@ -16,7 +16,8 @@ from fairlens.ui.results import latest_summary, model_verification  # noqa: E402
 POL = {"fairlens_gate_tuned": "FairLens Gate (val-tuned rules)", "fairlens_gate_default": "FairLens Gate (default rules)",
        "learned_logreg": "Learned gate (logistic regression)", "learned_tree": "Learned gate (decision tree)",
        "lowest_bias": "Lowest bias score", "highest_similarity": "Highest similarity", "random_mean": "Random (5 seeds)",
-       "fairlens_gate": "FairLens Gate (no retry)", "fairlens_gate_retry": "FairLens Gate + strict retry"}
+       "fairlens_gate": "FairLens Gate (no retry)", "fairlens_gate_retry": "FairLens Gate + strict retry",
+       "no_change": "No change (keep original)", "llm_judge": "LLM-as-judge (Qwen2.5, val-selected prompt)"}
 
 
 def f(v, d=3):
@@ -24,7 +25,11 @@ def f(v, d=3):
 
 
 def ci(x):
-    return "n/a" if not x or x.get("mean") is None else f"{x['mean']:.3f} [{x['lo']:.3f}, {x['hi']:.3f}]"
+    if not x or x.get("mean") is None:
+        return "n/a"
+    if x.get("lo") is None or x.get("hi") is None:
+        return f"{x['mean']:.3f} (no CI)"
+    return f"{x['mean']:.3f} [{x['lo']:.3f}, {x['hi']:.3f}]"
 
 
 def table(rows: list[dict]) -> str:

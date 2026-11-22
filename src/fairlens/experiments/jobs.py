@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -31,10 +32,10 @@ def start(name: str, args: list[str] | None = None) -> dict:
     jid = f"{time.strftime('%Y%m%d-%H%M%S')}-{name}-{uuid.uuid4().hex[:4]}"
     log = _dir() / f"{jid}.log"
     cmd = [sys.executable, *(args or SCRIPTS[name])]
-    fh = open(log, "w", encoding="utf-8")
     flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
-    p = subprocess.Popen(cmd, cwd=PROJECT_ROOT, stdout=fh, stderr=subprocess.STDOUT, creationflags=flags,
-                         env={**__import__("os").environ, "PYTHONUTF8": "1", "HF_HUB_DISABLE_PROGRESS_BARS": "1"})
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1", "HF_HUB_DISABLE_PROGRESS_BARS": "1"}
+    with open(log, "w", encoding="utf-8") as fh:
+        p = subprocess.Popen(cmd, cwd=PROJECT_ROOT, stdout=fh, stderr=subprocess.STDOUT, creationflags=flags, env=env)
     rec = {"id": jid, "name": name, "cmd": cmd, "pid": p.pid, "log": str(log), "started": time.time()}
     (_dir() / f"{jid}.json").write_text(json.dumps(rec), encoding="utf-8")
     return rec

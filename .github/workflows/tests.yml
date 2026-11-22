@@ -1,5 +1,5 @@
-# V4 1.2c: install with the project's own install scripts and run the fast tests on all three systems.
 name: tests
+
 on:
   push:
   pull_request:
@@ -7,12 +7,15 @@ on:
 
 jobs:
   fast-tests:
+    name: fast tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    env:
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+      FAIRLENS_DEVICE: cpu
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,26 +23,13 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements.txt
-      - name: Install (Windows, install.ps1)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          PYTHON: python
-        run: ./install.ps1
-      - name: Install (macOS/Linux, install.sh)
-        if: runner.os != 'Windows'
-        env:
-          PYTHON: python
-        run: bash install.sh
-      - name: Fast tests (Windows)
-        if: runner.os == 'Windows'
-        run: .venv\Scripts\python -m pytest -q -m "not slow"
-      - name: Fast tests (macOS/Linux)
-        if: runner.os != 'Windows'
-        run: .venv/bin/python -m pytest -q -m "not slow"
-      - name: Device report
-        if: always()
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e . --no-deps
+      - name: Fast tests (PYTHONUTF8 unset)
         shell: bash
         run: |
-          if [ -f .venv/bin/python ]; then P=.venv/bin/python; else P=.venv/Scripts/python; fi
-          $P -c "from fairlens import hardware as h; print(h.available_devices(), h.device())"
+          unset PYTHONUTF8
+          python -m pytest -q -m "not slow"

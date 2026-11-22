@@ -1,0 +1,121 @@
+{
+  "text": "We are looking for a young, energetic waitress to join our Bengaluru cafe. She must be available 6 days a week and have 2 years of experience.",
+  "detector_results": {
+    "bert": {
+      "detector": "bert",
+      "display": "BERT",
+      "score": 0.5081248879432678,
+      "label": "biased",
+      "runtime_ms": 6254.495200002566,
+      "error": null
+    },
+    "deberta": {
+      "detector": "deberta",
+      "display": "DeBERTa",
+      "score": 0.8610507845878601,
+      "label": "biased",
+      "runtime_ms": 2179.5105999990483,
+      "error": null
+    },
+    "bart_mnli": {
+      "detector": "bart_mnli",
+      "display": "BART-MNLI",
+      "score": 0.9847186207771301,
+      "label": "biased",
+      "runtime_ms": 3048.4108999989985,
+      "error": null
+    },
+    "rule_based": {
+      "detector": "rule_based",
+      "display": "Rule-based",
+      "score": 0.545,
+      "label": "biased",
+      "runtime_ms": 15.422399999806657,
+      "error": null,
+      "categories": {
+        "age": 0.3,
+        "gender": 0.35
+      }
+    }
+  },
+  "ensemble_score": 0.7247235733270645,
+  "level": "High",
+  "spans": [
+    {
+      "start": 21,
+      "end": 26,
+      "text": "young",
+      "category": "age",
+      "explanation": "Age-coded wording; can signal preference for or against an age group.",
+      "weight": 0.3
+    },
+    {
+      "start": 28,
+      "end": 37,
+      "text": "energetic",
+      "category": "model_attribution",
+      "explanation": "Removing this word lowers DeBERTa's bias score by 0.48.",
+      "weight": 0.48382577300071716
+    },
+    {
+      "start": 38,
+      "end": 46,
+      "text": "waitress",
+      "category": "gender",
+      "explanation": "Gender-marked term where a neutral alternative exists.",
+      "weight": 0.35
+    },
+    {
+      "start": 69,
+      "end": 73,
+      "text": "cafe",
+      "category": "model_attribution",
+      "explanation": "Removing this word lowers DeBERTa's bias score by 0.16.",
+      "weight": 0.16076433658599854
+    }
+  ],
+  "categories": [
+    {
+      "category": "gender",
+      "phrases": [
+        "waitress"
+      ],
+      "explanation": "Gender-marked term where a neutral alternative exists.",
+      "weight": 0.35
+    },
+    {
+      "category": "age",
+      "phrases": [
+        "young"
+      ],
+      "explanation": "Age-coded wording; can signal preference for or against an age group.",
+      "weight": 0.3
+    }
+  ],
+  "sentences": [
+    {
+      "text": "We are looking for a young, energetic waitress to join our Bengaluru cafe.",
+      "start": 0,
+      "end": 74,
+      "scores": {
+        "bert": 0.5081248879432678,
+        "deberta": 0.8610507845878601,
+        "bart_mnli": 0.9847186207771301,
+        "rule_based": 0.545
+      }
+    },
+    {
+      "text": "She must be available 6 days a week and have 2 years of experience.",
+      "start": 75,
+      "end": 142,
+      "scores": {
+        "bert": 0.15931326150894165,
+        "deberta": 0.01746976748108864,
+        "bart_mnli": 0.9831135272979736,
+        "rule_based": 0.0
+      }
+    }
+  ],
+  "runtime_ms": 12812.309700002515,
+  "missing_detectors": []
+}

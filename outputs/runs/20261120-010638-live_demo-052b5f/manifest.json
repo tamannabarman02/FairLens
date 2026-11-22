@@ -1,0 +1,231 @@
+{
+  "run_id": "20261120-010638-live_demo-052b5f",
+  "task": "live_demo",
+  "kind": "live_demo",
+  "status": "completed",
+  "started_at": "2026-11-19T19:36:38+00:00",
+  "finished_at": "2026-11-19T19:37:16+00:00",
+  "runtime_s": 38.21,
+  "command": "run_live_demo.py",
+  "config": {
+    "text": "We are looking for a young, energetic waitress to join our Bengaluru cafe. She must be available 6 days a week and have 2 years of experience.",
+    "profile": "standard",
+    "gate_overrides": {
+      "min_semantic_similarity": 0.6,
+      "entailment_mode": "forward",
+      "min_entailment_prob": 0.7,
+      "min_bias_reduction": 0.05,
+      "max_detector_std": 1.0
+    },
+    "spacy_model": "en_core_web_sm 3.8.0"
+  },
+  "seed": null,
+  "seeds": [],
+  "git_commit": null,
+  "datasets": {},
+  "dataset_versions": {},
+  "models": {},
+  "model_revisions": {},
+  "device": "cpu",
+  "hardware": {
+    "python": "3.11.9",
+    "os": "Windows 10 (10.0.26200)",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cpu_threads": 12,
+    "ram_total_gb": 15.7,
+    "ram_available_gb": 2.2,
+    "disk_free_gb": 95.6,
+    "cuda": false,
+    "mps": false,
+    "gpu_name": null,
+    "gpu_vram_gb": null,
+    "internet": false,
+    "torch_version": "2.14.1+cpu"
+  },
+  "outputs": {
+    "run_dir": "outputs/runs/20261120-010638-live_demo-052b5f",
+    "manifest": "outputs/runs/20261120-010638-live_demo-052b5f/manifest.json"
+  },
+  "fairlens_version": "0.1.0",
+  "environment": {
+    "python": "3.11.9",
+    "executable": "D:\\FairLens_Full\\FairLens\\.venv\\Scripts\\python.exe",
+    "packages": {
+      "numpy": "2.4.6",
+      "pandas": "3.1.0",
+      "scikit-learn": "1.9.1",
+      "scipy": "1.17.1",
+      "pyarrow": "26.0.0",
+      "torch": "2.14.1+cpu",
+      "transformers": "5.20.2",
+      "sentence-transformers": "6.2.0",
+      "spacy": "3.8.16"
+    },
+    "torch_hidden": false
+  },
+  "artifacts": {
+    "analysis.json": "outputs/runs/20261120-010638-live_demo-052b5f/analysis.json",
+    "mitigation.json": "outputs/runs/20261120-010638-live_demo-052b5f/mitigation.json",
+    "facts_extracted.json": "outputs/runs/20261120-010638-live_demo-052b5f/facts_extracted.json"
+  },
+  "metrics": {
+    "overall_score": 0.7247235733270645,
+    "detector_scores": {
+      "bert": 0.5081248879432678,
+      "deberta": 0.8610507845878601,
+      "bart_mnli": 0.9847186207771301,
+      "rule_based": 0.545
+    },
+    "decision": {
+      "decision": "ACCEPT",
+      "chosen": "rule_based",
+      "chosen_text": "We are looking for an energetic server to join our Bengaluru cafe. She must be available 6 days a week and have 2 years of experience.",
+      "reason_code": "ALL_CHECKS_PASSED",
+      "reason": "Bias reduced and meaning, facts and fluency preserved.",
+      "verdicts": [
+        {
+          "candidate": "original",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "rule_based",
+          "decision": "ACCEPT",
+          "reasons": [
+            "ALL_CHECKS_PASSED"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": true,
+            "RESIDUAL_BIAS": true,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "flan_t5",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "qwen",
+          "decision": "REJECT",
+          "reasons": [
+            "FACT_LOSS",
+            "ENTAILMENT_FAIL",
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": false,
+            "ENTAILMENT_FAIL": false,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        }
+      ],
+      "input_biased": true,
+      "attempts": 0
+    },
+    "candidates": {
+      "original": {
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "text": "We are looking for a young, energetic waitress to join our Bengaluru cafe. She must be available 6 days a week and have 2 years of experience.",
+        "bias_before": 0.5607003285735845,
+        "bias_after": 0.5607003285735845,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "fact_retention": 1.0
+      },
+      "rule_based": {
+        "verdict": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "text": "We are looking for an energetic server to join our Bengaluru cafe. She must be available 6 days a week and have 2 years of experience.",
+        "bias_before": 0.5607003285735845,
+        "bias_after": 0.2996580065228045,
+        "semantic_similarity": 0.771930456161499,
+        "entail_forward": 0.982219934463501,
+        "entail_backward": 0.003671444719657302,
+        "fact_retention": 1.0
+      },
+      "flan_t5": {
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "text": "We are looking for a young, energetic waitress to join our Bengaluru cafe. She must be available 6 days a week and have 2 years of experience.",
+        "bias_before": 0.5607003285735845,
+        "bias_after": 0.5607003285735845,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "fact_retention": 1.0
+      },
+      "qwen": {
+        "verdict": "REJECT",
+        "reasons": [
+          "FACT_LOSS",
+          "ENTAILMENT_FAIL",
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "text": "We're seeking an enthusiastic waitress to join our bustling Bengaluru caf\u00e9. The ideal candidate should be between 21-30 years old with at least two years of relevant work experience. They must be available every day from Monday to Friday.",
+        "bias_before": 0.5607003285735845,
+        "bias_after": 0.558132410608232,
+        "semantic_similarity": 0.8917511701583862,
+        "entail_forward": 0.005435499362647533,
+        "entail_backward": 0.9867740869522095,
+        "fact_retention": 0.6666666666666666
+      }
+    }
+  }
+}

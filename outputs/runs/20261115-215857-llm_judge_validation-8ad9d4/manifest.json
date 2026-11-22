@@ -1,0 +1,116 @@
+{
+  "run_id": "20261115-215857-llm_judge_validation-8ad9d4",
+  "task": "llm_judge_validation",
+  "kind": "llm_judge_validation",
+  "status": "completed",
+  "started_at": "2026-11-15T16:28:57+00:00",
+  "finished_at": "2026-11-15T16:29:13+00:00",
+  "runtime_s": 16.26,
+  "command": "validate_llm_judge.py",
+  "config": {
+    "split": "val",
+    "variants": [
+      "plain",
+      "checker_system",
+      "question_first"
+    ],
+    "limit": null,
+    "selection": "max cohen_kappa, then min unsafe_yes_rate, then min abstain_rate"
+  },
+  "seed": 13,
+  "seeds": [
+    13
+  ],
+  "git_commit": null,
+  "datasets": {
+    "datasets/processed/gate_controlled.parquet": "45e7b56e969cc01d"
+  },
+  "dataset_versions": {
+    "manifest": "datasets/processed/dataset_manifest.json",
+    "manifest_sha": "707fdde087d7d079",
+    "built_at": "2026-10-23T18:40:58+00:00",
+    "seed": 42,
+    "sources": {
+      "BABE": {
+        "repo": "mediabiasgroup/BABE",
+        "revision": "749f72c1b90f9ed6a9fb9dc7169db18f82dd8754",
+        "license": "CC BY-NC-SA 4.0 (per paper; card has no license field)"
+      },
+      "StereoSet": {
+        "repo": "McGill-NLP/stereoset",
+        "revision": "bf6e7ce50491784d094fb7afe60a70ecccb89035",
+        "license": "CC BY-SA 4.0"
+      },
+      "CrowS-Pairs": {
+        "url": "https://raw.githubusercontent.com/nyu-mll/crows-pairs/master/data/crows_pairs_anonymized.csv",
+        "sha256": "dfb36986ce0502abbaf7055b9176da3d08d48e07df1251991b5dfbcbceab9d0c",
+        "license": "CC BY-SA 4.0"
+      },
+      "WinoBias": {
+        "repo": "uclanlp/wino_bias",
+        "revision": "3f31267586e4408e3b3f77ec22198fd24ea8dc1d",
+        "license": "MIT"
+      }
+    },
+    "files": {
+      "gate_controlled.parquet": null
+    }
+  },
+  "models": {
+    "judge": "llm_judge|Qwen/Qwen2.5-0.5B-Instruct|7ae557604adf67be50417f59c2c2f167def9a775|greedy|4|seed13"
+  },
+  "model_revisions": {
+    "judge": {
+      "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+      "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+    }
+  },
+  "device": "cpu",
+  "hardware": {
+    "python": "3.13.9",
+    "os": "Windows 11 (10.0.26200)",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cpu_threads": 12,
+    "ram_total_gb": 15.7,
+    "ram_available_gb": 3.3,
+    "disk_free_gb": 96.8,
+    "cuda": false,
+    "mps": false,
+    "gpu_name": null,
+    "gpu_vram_gb": null,
+    "internet": false,
+    "torch_version": null
+  },
+  "outputs": {
+    "run_dir": "outputs/runs/20261115-215857-llm_judge_validation-8ad9d4",
+    "manifest": "outputs/runs/20261115-215857-llm_judge_validation-8ad9d4/manifest.json"
+  },
+  "fairlens_version": "0.1.0",
+  "environment": {
+    "python": "3.13.9",
+    "executable": "C:\\Users\\taman\\Anaconda3\\python.exe",
+    "packages": {
+      "numpy": "2.3.5",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.7.2",
+      "scipy": "1.16.3",
+      "pyarrow": "21.0.0",
+      "torch": "2.11.0",
+      "transformers": "5.7.0",
+      "sentence-transformers": null,
+      "spacy": null
+    },
+    "torch_hidden": true
+  },
+  "artifacts": {
+    "llm_judge_validation.json": "outputs/runs/20261115-215857-llm_judge_validation-8ad9d4/llm_judge_validation.json",
+    "prompts_log.jsonl": "outputs/runs/20261115-215857-llm_judge_validation-8ad9d4/prompts_log.jsonl",
+    "config": "configs/llm_judge.json"
+  },
+  "metrics": {
+    "selected_variant": "checker_system",
+    "plain_kappa": 0.10421006045693904,
+    "checker_system_kappa": 0.40477911066146355,
+    "question_first_kappa": 0.35902711211901595
+  }
+}

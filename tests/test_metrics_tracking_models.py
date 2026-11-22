@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 from fairlens.evaluation import metrics
-from fairlens.experiments import tracking
+from fairlens.experiments import cache, tracking
 from fairlens.models import ModelManager
 
 
@@ -39,6 +39,38 @@ def test_tracking_roundtrip(tmp_path):
     assert man["seed"] == 7 and man["status"] == "completed" and man["hardware"]["cpu_threads"] >= 1
     assert list(man["datasets"].values())[0] == tracking.file_sha(data)
     assert json.loads((t.dir / "res.json").read_text(encoding="utf-8")) == {"ok": True}
+
+
+class _Det:
+    hyp_biased, hyp_neutral = "biased", "neutral"
+
+    def __init__(self, revision=None, model="facebook/bart-large-mnli"):
+        self.revision, self.model = revision, model
+
+    def info(self):
+        return {"name": "zs", "model": self.model, "revision": self.revision}
+
+
+def test_score_cache_key_includes_revision_and_device(monkeypatch):
+    monkeypatch.setattr(cache, "device", lambda: "cpu")
+    pinned = cache.detector_identity(_Det())
+    assert tracking.pinned_revision("facebook/bart-large-mnli") in pinned and pinned.endswith("|device=cpu")
+    assert cache.detector_identity(_Det(revision="r1")) != cache.detector_identity(_Det(revision="r2"))
+    monkeypatch.setattr(cache, "device", lambda: "mps")
+    assert cache.detector_identity(_Det()) != pinned
+
+
+def test_rule_based_identity_has_no_device(monkeypatch):
+    monkeypatch.setattr(cache, "device", lambda: "mps")
+    assert "device=" not in cache.detector_identity(_Det(model=""))
+
+
+def test_score_cache_roundtrip_unicode(tmp_path):
+    c = cache.ScoreCache(tmp_path / "scores.sqlite")
+    c.put_many("m", {"Ça va — naïve café": 0.25})
+    assert c.get_many("m", ["Ça va — naïve café", "missing"]) == {"Ça va — naïve café": 0.25}
+    c.put_gen("m", "prompt é", {"text": "réécrit"})
+    assert c.get_gen("m", "prompt é") == {"text": "réécrit"}
 
 
 class _Blob:

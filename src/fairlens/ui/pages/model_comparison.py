@@ -3,22 +3,14 @@ import streamlit as st
 from ...experiments import jobs
 from ...reporting import charts
 from .. import components as C
-from ..common import theme
-from ..results import failed_runs, latest_with_manifest
+from ..common import result_header, theme
+from ..results import latest_summary
 
 SRC_LABEL = {"babe": "BABE (media bias)", "stereoset_inter": "StereoSet inter", "stereoset_intra": "StereoSet intra",
              "crows_pairs": "CrowS-Pairs"}
 
 
-def failed_note(kind: str) -> None:
-    bad = failed_runs(kind)
-    if bad:
-        C.render(f'<div style="margin:4px 0 8px">{C.result_label("failed")} ' + ", ".join(
-            f'<span class="fl-mono">{C.esc(r["run_id"])}</span> ({C.esc(r["status"])})' for r in bad[:3]) + "</div>")
-
-
 def run_button(job: str, label: str, key: str):
-    C.render(f'<div style="margin:6px 0">{C.result_label("pending")} no completed run yet</div>')
     r = jobs.running(job)
     if r:
         st.info(f"{label} is running (job {r['id']}). Progress is on Experiments & Exports.")
@@ -30,16 +22,15 @@ def run_button(job: str, label: str, key: str):
 def render():
     C.page_header("Model Comparison", "Every detector is evaluated on the same held-out test split with the same metrics and "
                                       "threshold (0.5).", "Detection benchmark")
-    s, man = latest_with_manifest("benchmark_detection", "detection_summary.json")
-    failed_note("benchmark_detection")
-    if not s:
-        C.render(C.empty_state("No detection benchmark yet", "Run the benchmark to fill this page with real results."))
+    s = latest_summary("benchmark_detection", "detection_summary.json")
+    if not result_header("Detection benchmark", "benchmark_detection", s is not None):
+        C.render(C.empty_state("No detection results to compare", "Charts and tables appear here once the detection benchmark "
+                               "completes. Start it below (it runs in the background)."))
+        C.gap()
         run_button("detection", "Run detection benchmark", "mc_run")
         return
     ok = {k: v for k, v in s["detectors"].items() if v.get("status") == "ok"}
-    C.render(C.provenance(s, man))
-    st.caption(f"Test n = {s['n_test']} (PC-08 excluded {s.get('excluded_near_duplicates', {}).get('n', 0)} near-duplicates) · "
-               f"finished {s.get('_finished_at') or '-'}")
+    st.caption(f"Test n = {s['n_test']} · threshold 0.5")
     names = [v["display"] for v in ok.values()]
     t1, t2, t3, t4 = st.tabs(["Performance Metrics", "Runtime & Resources", "Calibration", "Confusion Matrices"])
     with t1:
@@ -47,11 +38,11 @@ def render():
         with a:
             f1 = [v["metrics"]["macro_f1"] for v in ok.values()]
             err = [(v["metrics"]["macro_f1"] - v["ci"]["macro_f1"]["lo"], v["ci"]["macro_f1"]["hi"] - v["metrics"]["macro_f1"]) for v in ok.values()]
-            st.markdown("##### Macro-F1 per detector (95% bootstrap CI)")
+            C.section("Macro-F1 per detector (95% bootstrap CI)", C.METRIC_HELP["Macro-F1"])
             st.plotly_chart(charts.bar(names, f1, theme(), [charts.DETECTOR_COLORS.get(n, "#6D4AFF") for n in names], err, [0, 1]),
                             use_container_width=True, config={"displayModeBar": False})
         with b:
-            st.markdown("##### ROC curves")
+            C.section("ROC curves", C.METRIC_HELP["ROC-AUC"])
             roc = {v["display"]: (v["curves"]["roc"]["fpr"], v["curves"]["roc"]["tpr"]) for v in ok.values()}
             st.plotly_chart(charts.lines(roc, theme(), 300, "False positive rate", "True positive rate", diagonal=False),
                             use_container_width=True, config={"displayModeBar": False})
@@ -61,7 +52,7 @@ def render():
                  "Model MB": v.get("model_mb")} for v in ok.values()]
         C.render(C.html_table(rows, best={"Precision": "max", "Recall": "max", "F1": "max", "Macro-F1": "max", "ROC-AUC": "max",
                                           "PR-AUC": "max", "FPR": "min", "ms / sample": "min"}, fmt={"ms / sample": ".1f"}))
-        st.markdown("##### Macro-F1 by source dataset")
+        C.section("Macro-F1 by source dataset")
         st.caption("Sources measure different things (media framing vs. stereotype minimal pairs) and are not interchangeable.")
         srcs = sorted({src for v in ok.values() for src in v["by_source"]})
         st.plotly_chart(charts.grouped_bar([SRC_LABEL.get(x, x) for x in srcs],
@@ -76,11 +67,13 @@ def render():
     with t2:
         a, b = st.columns(2)
         ms = [v["ms_per_sample"] for v in ok.values()]
-        a.markdown("##### Inference time per sample (ms, CPU, batch 16)")
+        with a:
+            C.section("Inference time per sample (ms, CPU, batch 16)", C.METRIC_HELP["ms / sample"])
         a.plotly_chart(charts.bar(names, ms, theme(), [charts.DETECTOR_COLORS.get(n) for n in names], fmt=".1f"),
                        use_container_width=True, config={"displayModeBar": False})
         mb = [v.get("model_mb") or 0 for v in ok.values()]
-        b.markdown("##### Model weights in memory (MB)")
+        with b:
+            C.section("Model weights in memory (MB)")
         b.plotly_chart(charts.bar(names, mb, theme(), [charts.DETECTOR_COLORS.get(n) for n in names], fmt=".0f"),
                        use_container_width=True, config={"displayModeBar": False})
         C.render(C.html_table([{"Detector": v["display"], "ms / sample": v["ms_per_sample"], "Load time (s)": v["load_s"],
@@ -93,11 +86,12 @@ def render():
         for v in ok.values():
             pts = [(r["conf"], r["acc"]) for r in v["metrics"]["reliability"] if r["n"]]
             rel[v["display"]] = ([p[0] for p in pts], [p[1] for p in pts])
-        a.markdown("##### Reliability diagram")
+        with a:
+            C.section("Reliability diagram", "Predicted probability vs observed share biased; the diagonal is perfect calibration.")
         a.plotly_chart(charts.lines(rel, theme(), 340, "Predicted bias probability", "Observed share biased", diagonal=True),
                        use_container_width=True, config={"displayModeBar": False})
-        b.markdown("##### Calibration error")
-        b.write("")
+        with b:
+            C.section("Calibration error", C.METRIC_HELP["ECE"])
         C.render(C.html_table([{"Detector": v["display"], "ECE": v["metrics"]["ece"], "Brier": v["metrics"]["brier"]} for v in ok.values()],
                               best={"ECE": "min", "Brier": "min"}))
         b.caption("ECE: 10 equal-width bins. Zero-shot and rule scores are not trained probabilities, so poor calibration is expected.")

@@ -16,7 +16,7 @@ def render():
     C.render(C.pipeline_cards([("text", "Input", "Text, documents or images"), ("lens", "Bias Detection", "BERT · DeBERTa · BART-MNLI · rules"),
                                ("wand", "Mitigation", "Rule · FLAN-T5 · Qwen"), ("shield", "Reliability Gate", "accept / retry / reject / review"),
                                ("check", "Output", "Verified rewrite + evidence")]))
-    st.write("")
+    C.gap()
     tabs = st.tabs(["Overview", "Methodology", "Models", "Datasets", "Limitations", "Citation"])
     with tabs[0]:
         st.markdown(md("APPLICATIONS_AND_VIVA.md").split("## ", 2)[1] if "## " in md("APPLICATIONS_AND_VIVA.md") else md("APPLICATIONS_AND_VIVA.md"))

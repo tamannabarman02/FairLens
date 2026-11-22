@@ -9,11 +9,67 @@ from __future__ import annotations
 import gc
 import threading
 import time
+import warnings
 from collections import OrderedDict
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 
 from . import config  # noqa: F401  (sets HF cache before transformers import)
+from .hardware import device as selected_device
 from .hardware import select_profile
+
+T = TypeVar("T")
+
+
+def place(model: Any, device: str | None = None, allow_mps: bool = True) -> Any:
+    """Move a torch module to `device` (default: hardware.device()); fall back to CPU if that fails.
+
+    allow_mps=False keeps models with ops unsupported on Apple MPS on the CPU.
+    """
+    dev = device or selected_device()
+    if dev == "mps" and not allow_mps:
+        dev = "cpu"
+    if dev == "cpu":
+        return model.to("cpu")
+    try:
+        return model.to(dev)
+    except Exception as exc:  # noqa: BLE001
+        warnings.warn(f"Could not move {type(model).__name__} to {dev} ({exc}); using CPU.")
+        return model.to("cpu")
+
+
+def model_device(model: Any) -> Any:
+    """torch.device the module's parameters live on (CPU if it has none)."""
+    import torch
+
+    try:
+        return next(model.parameters()).device
+    except (StopIteration, AttributeError):
+        return torch.device("cpu")
+
+
+def to_model_device(inputs: Any, model: Any) -> Any:
+    """Move a tensor, BatchEncoding or dict of tensors to the model's device."""
+    dev = model_device(model)
+    if hasattr(inputs, "to"):
+        return inputs.to(dev)
+    if isinstance(inputs, dict):
+        return {k: v.to(dev) if hasattr(v, "to") else v for k, v in inputs.items()}
+    return inputs
+
+
+def run_with_cpu_fallback(model: Any, fn: Callable[[], T]) -> T:
+    """Run fn(); if it fails on cuda/mps (unsupported op, out of memory), move the model to CPU and retry once.
+
+    fn must place its inputs with to_model_device so the retry uses CPU tensors.
+    """
+    try:
+        return fn()
+    except (RuntimeError, NotImplementedError) as exc:
+        if model_device(model).type == "cpu":
+            raise
+        warnings.warn(f"{type(model).__name__} failed on {model_device(model).type} ({exc}); retrying on CPU.")
+        model.to("cpu")
+        return fn()
 
 
 def param_mb(model: Any) -> float:

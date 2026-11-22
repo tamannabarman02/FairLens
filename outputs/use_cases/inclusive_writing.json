@@ -1,0 +1,700 @@
+{
+  "id": "inclusive_writing",
+  "kind": "text",
+  "title": "Content moderation and inclusive writing",
+  "input": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+  "computed_at": "2026-10-24 07:14",
+  "analysis": {
+    "text": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+    "detector_results": {
+      "bert": {
+        "detector": "bert",
+        "display": "BERT",
+        "score": 0.06726717203855515,
+        "label": "neutral",
+        "runtime_ms": 339.1449159971671,
+        "error": null
+      },
+      "deberta": {
+        "detector": "deberta",
+        "display": "DeBERTa",
+        "score": 0.8443999886512756,
+        "label": "biased",
+        "runtime_ms": 892.5338330009254,
+        "error": null
+      },
+      "bart_mnli": {
+        "detector": "bart_mnli",
+        "display": "BART-MNLI",
+        "score": 0.9963326454162598,
+        "label": "biased",
+        "runtime_ms": 1712.2199580044253,
+        "error": null
+      },
+      "rule_based": {
+        "detector": "rule_based",
+        "display": "Rule-based",
+        "score": 0.780625,
+        "label": "biased",
+        "runtime_ms": 0.7734999962849542,
+        "error": null,
+        "categories": {
+          "gender": 0.35,
+          "age": 0.55,
+          "loaded_language": 0.25
+        }
+      }
+    },
+    "ensemble_score": 0.6721562015265227,
+    "level": "High",
+    "spans": [
+      {
+        "start": 4,
+        "end": 12,
+        "text": "chairman",
+        "category": "gender",
+        "explanation": "Gender-marked term where a neutral alternative exists.",
+        "weight": 0.35
+      },
+      {
+        "start": 18,
+        "end": 33,
+        "text": "the elderly are",
+        "category": "age",
+        "explanation": "Makes a broad generalisation about a social group.",
+        "weight": 0.55
+      },
+      {
+        "start": 36,
+        "end": 42,
+        "text": "burden",
+        "category": "model_attribution",
+        "explanation": "Removing this word lowers DeBERTa's bias score by 0.11.",
+        "weight": 0.11086839437484741
+      },
+      {
+        "start": 71,
+        "end": 74,
+        "text": "the",
+        "category": "model_attribution",
+        "explanation": "Removing this word lowers DeBERTa's bias score by 0.21.",
+        "weight": 0.2092040777206421
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "so-called",
+        "category": "loaded_language",
+        "explanation": "Loaded or derogatory wording that frames a group or event subjectively.",
+        "weight": 0.25
+      }
+    ],
+    "categories": [
+      {
+        "category": "age",
+        "phrases": [
+          "the elderly are"
+        ],
+        "explanation": "Makes a broad generalisation about a social group.",
+        "weight": 0.55
+      },
+      {
+        "category": "gender",
+        "phrases": [
+          "chairman"
+        ],
+        "explanation": "Gender-marked term where a neutral alternative exists.",
+        "weight": 0.35
+      },
+      {
+        "category": "loaded_language",
+        "phrases": [
+          "so-called"
+        ],
+        "explanation": "Loaded or derogatory wording that frames a group or event subjectively.",
+        "weight": 0.25
+      }
+    ],
+    "sentences": [
+      {
+        "text": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+        "start": 0,
+        "end": 104,
+        "scores": {
+          "bert": 0.06726717203855515,
+          "deberta": 0.8443999886512756,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        }
+      }
+    ],
+    "runtime_ms": 3191.215375001775,
+    "missing_detectors": []
+  },
+  "mitigation": {
+    "original": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+    "decision": {
+      "decision": "ACCEPT",
+      "chosen": "rule_based",
+      "chosen_text": "The chairperson said the older are a burden on the 2025 budget and that the experts were wrong.",
+      "reason_code": "ALL_CHECKS_PASSED",
+      "reason": "Bias reduced and meaning, facts and fluency preserved.",
+      "verdicts": [
+        {
+          "candidate": "original",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "rule_based",
+          "decision": "ACCEPT",
+          "reasons": [
+            "ALL_CHECKS_PASSED"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": true,
+            "RESIDUAL_BIAS": true,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "flan_t5",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        },
+        {
+          "candidate": "qwen",
+          "decision": "RETRY",
+          "reasons": [
+            "INSUFFICIENT_BIAS_REDUCTION",
+            "RESIDUAL_BIAS"
+          ],
+          "checks": {
+            "FACT_LOSS": true,
+            "ENTAILMENT_FAIL": true,
+            "CONTRADICTION": true,
+            "LOW_SIMILARITY": true,
+            "LENGTH_OUT_OF_BOUNDS": true,
+            "FLUENCY_FAIL": true,
+            "INSUFFICIENT_BIAS_REDUCTION": false,
+            "RESIDUAL_BIAS": false,
+            "DETECTOR_DISAGREEMENT": true,
+            "LOW_CONFIDENCE": true
+          }
+        }
+      ],
+      "input_biased": true,
+      "attempts": 0
+    },
+    "candidates": [
+      {
+        "candidate": "original",
+        "text": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+        "changed": false,
+        "bias_before": 0.6721561791747809,
+        "bias_after": 0.6721561791747809,
+        "bias_reduction": 0.0,
+        "detector_scores_before": {
+          "bert": 0.06726726144552231,
+          "deberta": 0.8443998098373413,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        },
+        "detector_scores_after": {
+          "bert": 0.06726726144552231,
+          "deberta": 0.8443998098373413,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        },
+        "detector_std": 0.3579156106722367,
+        "confidence_margin": 0.34431235834956175,
+        "uncertainty": 0.6857594314974558,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "entailment_both_ways": 1.0,
+        "contradiction": 0.0,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "chairperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "rule_based",
+        "text": "The chairperson said the older are a burden on the 2025 budget and that the experts were wrong.",
+        "changed": true,
+        "bias_before": 0.6721561791747809,
+        "bias_after": 0.2589231734164059,
+        "bias_reduction": 0.41323300575837496,
+        "detector_scores_before": {
+          "bert": 0.06726726144552231,
+          "deberta": 0.8443998098373413,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        },
+        "detector_scores_after": {
+          "bert": 0.00695219449698925,
+          "deberta": 0.03174707666039467,
+          "bart_mnli": 0.9969934225082397,
+          "rule_based": 0.0
+        },
+        "detector_std": 0.4262884162985811,
+        "confidence_margin": 0.48215365316718817,
+        "uncertainty": 0.6852115897149871,
+        "semantic_similarity": 0.9177750945091248,
+        "entail_forward": 0.9822818040847778,
+        "entail_backward": 0.7554931044578552,
+        "entailment_both_ways": 0.7554931044578552,
+        "contradiction": 0.03722648695111275,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "chairperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 0.9473684210526315,
+        "verdict": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "flan_t5",
+        "text": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+        "changed": false,
+        "bias_before": 0.6721561791747809,
+        "bias_after": 0.6721561791747809,
+        "bias_reduction": 0.0,
+        "detector_scores_before": {
+          "bert": 0.06726726144552231,
+          "deberta": 0.8443998098373413,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        },
+        "detector_scores_after": {
+          "bert": 0.06726726144552231,
+          "deberta": 0.8443998098373413,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        },
+        "detector_std": 0.3579156106722367,
+        "confidence_margin": 0.34431235834956175,
+        "uncertainty": 0.6857594314974558,
+        "semantic_similarity": 1.0,
+        "entail_forward": 1.0,
+        "entail_backward": 1.0,
+        "entailment_both_ways": 1.0,
+        "contradiction": 0.0,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "chairperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.0,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "qwen",
+        "text": "The chairman expressed concern over the elderly population's impact on the 2025 budget, stating that the \"so-called experts\" had been mistaken.",
+        "changed": true,
+        "bias_before": 0.6721561791747809,
+        "bias_after": 0.6840931108593941,
+        "bias_reduction": -0.011936931684613183,
+        "detector_scores_before": {
+          "bert": 0.06726726144552231,
+          "deberta": 0.8443998098373413,
+          "bart_mnli": 0.9963326454162598,
+          "rule_based": 0.780625
+        },
+        "detector_scores_after": {
+          "bert": 0.678326427936554,
+          "deberta": 0.4023999869823456,
+          "bart_mnli": 0.9968960285186768,
+          "rule_based": 0.6587500000000001
+        },
+        "detector_std": 0.21087449421144694,
+        "confidence_margin": 0.3681862217187881,
+        "uncertainty": 0.5267813833520529,
+        "semantic_similarity": 0.8140085339546204,
+        "entail_forward": 0.9978146553039551,
+        "entail_backward": 0.9705102443695068,
+        "entailment_both_ways": 0.9705102443695068,
+        "contradiction": 0.0002735128509812057,
+        "fact_retention": 1.0,
+        "fact_checks": {
+          "entities": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "numbers": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "dates": {
+            "pass": true,
+            "kept": [
+              "2025"
+            ],
+            "missing": []
+          },
+          "roles": {
+            "pass": true,
+            "kept": [
+              "chairperson"
+            ],
+            "missing": []
+          },
+          "quotes": {
+            "pass": true,
+            "kept": [],
+            "missing": []
+          },
+          "negation": {
+            "pass": true,
+            "original": 0,
+            "rewrite": 0
+          }
+        },
+        "fluency": 1.0,
+        "length_ratio": 1.105263157894737,
+        "verdict": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      }
+    ],
+    "rewrite_log": [
+      {
+        "rewriter": "rule_based",
+        "text": "The chairperson said the older are a burden on the 2025 budget and that the experts were wrong.",
+        "runtime_ms": 2.1996249997755513,
+        "prompt": null,
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      },
+      {
+        "rewriter": "flan_t5",
+        "text": "The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.",
+        "runtime_ms": 1853.510750006535,
+        "prompt": "Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. Keep all facts, names, numbers and negations exactly. Return only the rewritten text. \n\nText: The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.\nRewritten text:",
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      },
+      {
+        "rewriter": "qwen",
+        "text": "The chairman expressed concern over the elderly population's impact on the 2025 budget, stating that the \"so-called experts\" had been mistaken.",
+        "runtime_ms": 1515.5345830135047,
+        "prompt": "<|im_start|>system\nYou are a careful editor who removes bias from text without changing its facts. Rewrite the following text in neutral, inclusive language that avoids stereotypes about any group. Keep all facts, names, numbers and negations exactly. Return only the rewritten text.<|im_end|>\n<|im_start|>user\nText: The chairman said the elderly are a burden on the 2025 budget and that the so-called experts were wrong.<|im_end|>\n<|im_start|>assistant\n",
+        "attempt": 0,
+        "strict": false,
+        "error": null,
+        "meta": {}
+      }
+    ],
+    "lowest_bias_choice": "rule_based",
+    "runtime_ms": 7810.652708009002
+  },
+  "bias_score": 0.6721562015265227,
+  "decision": {
+    "decision": "ACCEPT",
+    "chosen": "rule_based",
+    "chosen_text": "The chairperson said the older are a burden on the 2025 budget and that the experts were wrong.",
+    "reason_code": "ALL_CHECKS_PASSED",
+    "reason": "Bias reduced and meaning, facts and fluency preserved.",
+    "verdicts": [
+      {
+        "candidate": "original",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "rule_based",
+        "decision": "ACCEPT",
+        "reasons": [
+          "ALL_CHECKS_PASSED"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": true,
+          "RESIDUAL_BIAS": true,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "flan_t5",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      },
+      {
+        "candidate": "qwen",
+        "decision": "RETRY",
+        "reasons": [
+          "INSUFFICIENT_BIAS_REDUCTION",
+          "RESIDUAL_BIAS"
+        ],
+        "checks": {
+          "FACT_LOSS": true,
+          "ENTAILMENT_FAIL": true,
+          "CONTRADICTION": true,
+          "LOW_SIMILARITY": true,
+          "LENGTH_OUT_OF_BOUNDS": true,
+          "FLUENCY_FAIL": true,
+          "INSUFFICIENT_BIAS_REDUCTION": false,
+          "RESIDUAL_BIAS": false,
+          "DETECTOR_DISAGREEMENT": true,
+          "LOW_CONFIDENCE": true
+        }
+      }
+    ],
+    "input_biased": true,
+    "attempts": 0
+  },
+  "must_preserve_check": {
+    "2025": true
+  }
+}

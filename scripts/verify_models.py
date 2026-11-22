@@ -27,7 +27,7 @@ SAMPLE_IMAGE_URL = "http://images.cocodataset.org/val2017/000000039769.jpg"
 
 # key: (role, model_id, kind)
 CANDIDATES = {
-    "distilbert-base-uncased": ("detector base (BERT family)", "distilbert-base-uncased", "encoder"),
+    "distilbert/distilbert-base-uncased": ("detector base (BERT family)", "distilbert/distilbert-base-uncased", "encoder"),
     "bert-base-uncased": ("detector base (BERT family, larger)", "bert-base-uncased", "encoder"),
     "deberta-v3-small": ("detector base (DeBERTa family)", "microsoft/deberta-v3-small", "encoder"),
     "hub-bias-roberta": ("pretrained Hub bias classifier", "himel7/bias-detector", "classifier"),

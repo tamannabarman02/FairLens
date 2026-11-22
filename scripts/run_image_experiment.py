@@ -87,11 +87,12 @@ def build_subset(n_person: int, n_other: int, seed: int = 42) -> list[dict]:
         p = IMG_DIR / info["file_name"]
         if not p.exists():
             p.write_bytes(fetch(info["coco_url"]))
-        out.append({"image_id": iid, "file": str(p.relative_to(ROOT)), "contains_person_category": has_person,
+        out.append({"image_id": iid, "file": p.relative_to(ROOT).as_posix(), "contains_person_category": has_person,
                     "license": licenses[info["license"]], "coco_url": info["coco_url"], "flickr_url": info.get("flickr_url"),
                     "width": info["width"], "height": info["height"], "reference_captions": refs.get(iid, [])})
     MANIFEST.write_text(json.dumps({"source": "COCO 2017 val (images: Flickr licences per image; annotations CC BY 4.0)",
-                                    "seed": seed, "n_person": n_person, "n_other": n_other, "images": out}, indent=2), encoding="utf-8")
+                                    "seed": seed, "n_person": n_person, "n_other": n_other, "images": out}, indent=2),
+                        encoding="utf-8")
     return out
 
 
@@ -99,7 +100,7 @@ def user_images() -> list[dict]:
     out = []
     for p in sorted(USER_DIR.glob("*")):
         if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
-            out.append({"image_id": p.name, "file": str(p.relative_to(ROOT)), "contains_person_category": None,
+            out.append({"image_id": p.name, "file": p.relative_to(ROOT).as_posix(), "contains_person_category": None,
                         "license": {"name": "user-provided"}, "reference_captions": []})
     return out
 
@@ -123,7 +124,7 @@ def main():
         manager().clear()
         log(f"captioning with {cap.display} ({cap.model_id})")
         for k, it in enumerate(items):
-            img = Image.open(ROOT / it["file"]).convert("RGB")
+            img = Image.open(ROOT / it["file"].replace("\\", "/")).convert("RGB")
             c = cap.caption(img)
             rows.append({"image_id": it["image_id"], "captioner": name, "display": cap.display, "model": cap.model_id,
                          "caption": c.text, "runtime_ms": c.runtime_ms, "error": c.error})
@@ -137,7 +138,7 @@ def main():
     clip = ClipAlignment()
     clip_gen, clip_ref = [], {}
     for it in items:
-        img = Image.open(ROOT / it["file"]).convert("RGB")
+        img = Image.open(ROOT / it["file"].replace("\\", "/")).convert("RGB")
         caps = df[(df.image_id == it["image_id"]) & df.caption.notna()]
         texts = caps.caption.tolist() + it["reference_captions"][:1]
         sims = clip.score(img, texts) if texts else []

@@ -3,7 +3,11 @@
 Plain PyTorch loop (CPU-friendly): dynamic padding, length-bucketed batches, linear warmup/decay,
 best checkpoint by validation macro-F1. Saves to checkpoints/<name>/ with fairlens_training.json.
 
-Usage: python scripts/train_detectors.py --model bert|deberta|all [--epochs 2] [--max-train N]
+Runs on hardware.device() (cuda > mps > cpu; FAIRLENS_DEVICE overrides). DeBERTa freezes its embedding layer by
+default (its 128k-token embedding matrix + AdamW state caused RAM swapping); see docs/PROGRESS.md.
+
+Usage: python scripts/train_detectors.py --model bert|deberta|all [--epochs 2] [--max-train N] [--max-length 64]
+       [--freeze-embeddings | --no-freeze-embeddings] [--out-suffix _speedtest]
 """
 from __future__ import annotations
 
@@ -24,11 +28,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from fairlens.config import PROJECT_ROOT, load_config  # noqa: E402
 from fairlens.experiments.tracking import RunTracker  # noqa: E402
+from fairlens.models import place  # noqa: E402
 
 DATA = ROOT / "datasets" / "processed" / "detection.parquet"
 HPARAMS = {
-    "bert": {"lr": 5e-5, "epochs": 3, "batch_size": 16, "max_length": 128},
-    "deberta": {"lr": 5e-5, "epochs": 3, "batch_size": 16, "max_length": 128},
+    "bert": {"lr": 5e-5, "epochs": 3, "batch_size": 16, "max_length": 128, "freeze_embeddings": False},
+    "deberta": {"lr": 5e-5, "epochs": 3, "batch_size": 16, "max_length": 128, "freeze_embeddings": True},
 }
 
 
@@ -38,6 +43,17 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def freeze_embeddings(model) -> int:
+    """Set requires_grad=False on the base model's embedding layer; return the number of frozen parameters."""
+    frozen = 0
+    for p in model.base_model.embeddings.parameters():
+        p.requires_grad = False
+        frozen += p.numel()
+    return frozen
 
 
 def batches(enc_lens: list[int], bs: int, rng: random.Random, shuffle: bool):
@@ -59,10 +75,11 @@ def evaluate(model, tok, texts, labels, max_length, bs=32):
     from sklearn.metrics import f1_score
 
     model.eval()
+    dev = next(model.parameters()).device
     probs = np.zeros(len(texts))
     lens = [len(t) for t in texts]
     for b in batches(lens, bs, random.Random(0), shuffle=False):
-        enc = tok([texts[i] for i in b], padding=True, truncation=True, max_length=max_length, return_tensors="pt").to(model.device)
+        enc = tok([texts[i] for i in b], padding=True, truncation=True, max_length=max_length, return_tensors="pt").to(dev)
         with torch.inference_mode():
             p = torch.softmax(model(**enc).logits.float(), -1)[:, 1].cpu().numpy()
         probs[b] = p
@@ -71,12 +88,11 @@ def evaluate(model, tok, texts, labels, max_length, bs=32):
 
 
 def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42, max_length: int | None = None,
-          log_every: int = 50, out_suffix: str = "", freeze_embeddings: bool | None = None) -> dict:
+          log_every: int = 50, out_suffix: str = "", freeze_emb: bool | None = None) -> dict:
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_linear_schedule_with_warmup
 
-    from fairlens.config import pinned_revision, rel_posix
-    from fairlens.hardware import device, place
+    from fairlens.config import pinned_revision
 
     spec = load_config()["detectors"][name]
     hp = dict(HPARAMS[name])
@@ -84,9 +100,8 @@ def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42, 
         hp["epochs"] = epochs
     if max_length:
         hp["max_length"] = max_length
-    if freeze_embeddings is not None:
-        hp["freeze_embeddings"] = freeze_embeddings
-    hp.setdefault("freeze_embeddings", False)
+    if freeze_emb is not None:
+        hp["freeze_embeddings"] = freeze_emb
     base = spec["base_model"]
     out_dir = PROJECT_ROOT / (spec["checkpoint"] + out_suffix)
     set_seed(seed)
@@ -98,34 +113,37 @@ def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42, 
     rev = pinned_revision(base)
     tok = AutoTokenizer.from_pretrained(base, revision=rev)
     model = AutoModelForSequenceClassification.from_pretrained(
-        base, num_labels=2, id2label={0: "neutral", 1: "biased"}, label2id={"neutral": 0, "biased": 1}, revision=rev)
-    if hp["freeze_embeddings"]:  # V4 1.4 fix ladder step 1: no gradients/optimizer state for the embedding matrix
-        for prm in model.base_model.embeddings.parameters():
-            prm.requires_grad = False
+        base, num_labels=2, id2label={0: "neutral", 1: "biased"}, label2id={"neutral": 0, "biased": 1}, revision=rev,
+        dtype="float32")
+    if hp["freeze_embeddings"]:
+        print(f"[{name}] froze {freeze_embeddings(model):,} embedding parameters", flush=True)
     model = place(model)
-    dev = device()
+    dev = str(next(model.parameters()).device)
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    print(f"[{name}] device {dev}, trainable params {sum(p.numel() for p in trainable):,}", flush=True)
 
     texts, labels = tr.text.tolist(), tr.label.to_numpy()
     lens = [len(tok.tokenize(t)) for t in texts]
     rng = random.Random(seed)
     steps_per_epoch = math.ceil(len(texts) / hp["batch_size"])
     total = steps_per_epoch * hp["epochs"]
-    opt = torch.optim.AdamW([prm for prm in model.parameters() if prm.requires_grad], lr=hp["lr"], weight_decay=0.01)
+    opt = torch.optim.AdamW(trainable, lr=hp["lr"], weight_decay=0.01)
     sched = get_linear_schedule_with_warmup(opt, int(0.1 * total), total)
 
     tracker = RunTracker("train_detector", config={"detector": name, "base_model": base, "revision": rev, **hp,
-                                                   "n_train": len(texts), "n_val": len(va), "seed": seed, "device": dev},
-                         seed=seed, dataset_files=[DATA], models={name: f"{base}@{rev}"})
+                                                   "n_train": len(texts), "n_val": len(va), "seed": seed,
+                                                   "device": dev},
+                         seed=seed, dataset_files=[DATA])
     best, history, t_start = -1.0, [], time.perf_counter()
     step = 0
     for ep in range(hp["epochs"]):
         model.train()
         ep_loss, t_ep = 0.0, time.perf_counter()
         for bi, b in enumerate(batches(lens, hp["batch_size"], rng, shuffle=True)):
-            enc = tok([texts[i] for i in b], padding=True, truncation=True, max_length=hp["max_length"], return_tensors="pt").to(model.device)
-            out = model(**enc, labels=torch.tensor(labels[b], device=model.device))
+            enc = tok([texts[i] for i in b], padding=True, truncation=True, max_length=hp["max_length"], return_tensors="pt").to(dev)
+            out = model(**enc, labels=torch.tensor(labels[b]).to(dev))
             out.loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(trainable, 1.0)
             opt.step(); sched.step(); opt.zero_grad()
             ep_loss += out.loss.item(); step += 1
             if bi % log_every == 0:
@@ -141,13 +159,14 @@ def train(name: str, epochs: int | None, max_train: int | None, seed: int = 42, 
             out_dir.mkdir(parents=True, exist_ok=True)
             model.save_pretrained(out_dir)
             tok.save_pretrained(out_dir)
-    meta = {"detector": name, "base_model": base, "base_revision": rev, "hparams": hp, "seed": seed,
+    meta = {"detector": name, "base_model": base, "base_revision": rev, "hparams": hp, "seed": seed, "device": dev,
+            "freeze_embeddings": hp["freeze_embeddings"], "n_trainable_params": sum(p.numel() for p in trainable),
             "n_train": len(texts), "n_val": len(va), "best_val_macro_f1": best, "history": history,
             "train_seconds": round(time.perf_counter() - t_start, 1),
             "data_sha256": hashlib.sha256(DATA.read_bytes()).hexdigest()[:16],
-            "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "run_id": tracker.run_id, "device": dev}
+            "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "run_id": tracker.run_id}
     (out_dir / "fairlens_training.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    tracker.finish(metrics={"best_val_macro_f1": best}, artifacts={"checkpoint": rel_posix(out_dir), "history": history})
+    tracker.finish(metrics={"best_val_macro_f1": best}, artifacts={"checkpoint": str(out_dir), "history": history})
     return meta
 
 
@@ -160,11 +179,11 @@ def main():
     ap.add_argument("--log-every", type=int, default=50)
     ap.add_argument("--out-suffix", default="", help="e.g. _speedtest: write to a separate checkpoint dir")
     ap.add_argument("--freeze-embeddings", action=argparse.BooleanOptionalAction, default=None,
-                    help="freeze the embedding layer (default: value in HPARAMS)")
+                    help="freeze the embedding layer (default: on for deberta, off for bert)")
     a = ap.parse_args()
     for name in (["bert", "deberta"] if a.model == "all" else [a.model]):
-        meta = train(name, a.epochs, a.max_train, max_length=a.max_length, log_every=a.log_every, out_suffix=a.out_suffix,
-                     freeze_embeddings=a.freeze_embeddings)
+        meta = train(name, a.epochs, a.max_train, max_length=a.max_length, log_every=a.log_every,
+                     out_suffix=a.out_suffix, freeze_emb=a.freeze_embeddings)
         print(json.dumps({k: meta[k] for k in ["detector", "best_val_macro_f1", "train_seconds"]}))
 
 

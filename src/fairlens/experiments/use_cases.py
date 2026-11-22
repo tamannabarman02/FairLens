@@ -26,7 +26,7 @@ def run_use_case(case: dict, detectors=None, rewriters=None, suite=None, cfg=Non
 
         man = json.loads((PROJECT_ROOT / "datasets" / "images" / "coco_val2017_subset" / "manifest.json").read_text(encoding="utf-8"))
         item = next(i for i in man["images"] if i["contains_person_category"])
-        img = Image.open(PROJECT_ROOT / item["file"]).convert("RGB")
+        img = Image.open(PROJECT_ROOT / item["file"].replace("\\", "/")).convert("RGB")
         r = analyze_image(img, detectors=detectors, references=item["reference_captions"]).to_dict()
         out.update({"image": item["file"], "license": item["license"], "captions": r["captions"]})
     elif case["kind"] == "benchmark":

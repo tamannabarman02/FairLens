@@ -7,7 +7,24 @@ sample on this machine** by `scripts/verify_models.py` (each model in its own pr
 
 ## Measured on this machine
 <!-- MEASURED:START -->
-_(filled by `scripts/generate_results_md.py`)_
+| Role | Model | License (card) | Revision | Weights MB | Load s | Latency ms | Peak RAM MB | Status | Sample output |
+|---|---|---|---|---|---|---|---|---|---|
+| detector base (BERT family) | distilbert-base-uncased | apache-2.0 | 12040accad | 256 | 32.840 | 118.300 | 728 | verified | "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer BertTokenizer, tok |
+| detector base (BERT family, larger) | bert-base-uncased | apache-2.0 | 86b5e09344 | 420 | 37.090 | 46.000 | 889 | verified | "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer BertTokenizer, tok |
+| detector base (DeBERTa family) | microsoft/deberta-v3-small | mit | a36c739020 | 273 | 30.940 | 367.700 | 774 | verified | "untrained 2-class head forward pass OK, logits shape (1, 2); tokenizer DebertaV2Tokenizer |
+| pretrained Hub bias classifier | himel7/bias-detector | apache-2.0 | b79f0150e5 | 476 | 36.970 | 72.500 | 964 | verified | {"biased_sample": 0.491, "neutral_sample": 0.016, "biased_ids": [1]} |
+| zero-shot detector | facebook/bart-large-mnli | mit | d7645e127e | 1554 | 54.770 | 299.200 | 2241 | verified | {"biased_sample": 0.997, "neutral_sample": 0.903} |
+| zero-shot detector (lite) | valhalla/distilbart-mnli-12-1 | none on card | 506336d421 | 849 | 42.460 | 160.700 | 1314 | verified | {"biased_sample": 0.885, "neutral_sample": 0.788} |
+| mitigation LLM A | google/flan-t5-base | apache-2.0 | 7bcac572ce | 944 | 48.290 | 819.900 | 1624 | verified | "Looking for a young, aggressive salesman with 5 years of experience." |
+| mitigation LLM A (larger) | google/flan-t5-large | apache-2.0 | 0613663d0d | 2988 | 127.520 | 1997.200 | 3747 | verified | "Looking for a young, aggressive salesman with 5 years of experience." |
+| mitigation LLM B | Qwen/Qwen2.5-0.5B-Instruct | apache-2.0 | 7ae557604a | 942 | 48.790 | 2366.100 | 1501 | verified | "Looking for an energetic salesperson with five years of experience." |
+| mitigation LLM B (larger) | Qwen/Qwen2.5-1.5B-Instruct | apache-2.0 | 989aa7980e | 2944 | 111.220 | 9348.900 | 3533 | verified | "We are seeking an energetic sales professional with at least five years of relevant exper |
+| semantic similarity | sentence-transformers/all-MiniLM-L6-v2 | apache-2.0 | 1110a243fd | 87 | 27.020 | 83.700 | 605 | verified | {"cosine": 0.652} |
+| bidirectional entailment | cross-encoder/nli-deberta-v3-small | apache-2.0 | fa2804872c | 541 | 46.720 | 65.100 | 1329 | verified | {"paraphrase_both": 0.005, "changed_fact_both": 0.0, "changed_fact_contradiction": 1.0} |
+| captioner A | Salesforce/blip-image-captioning-base | bsd-3-clause | 82a3776079 | 944 | 49.990 | 1420.900 | 1574 | verified | "two cats sleeping on a couch" |
+| captioner B (native port) | florence-community/Florence-2-base | mit | 00921df66d | 442 | 34.870 | 21343.300 | 1160 | verified | "Two cats laying on a pink couch next to a remote control." |
+| captioner B fallback | nlpconnect/vit-gpt2-image-captioning | apache-2.0 | dc68f91c06 | 937 | 48.970 | 1453.000 | 1471 | verified | "a cat laying on top of a couch next to another cat" |
+| image-text alignment | openai/clip-vit-base-patch32 | none on card | 3d74acf9a2 | 577 | 34.750 | 347.200 | 978 | verified | {"matching_caption": 0.316, "wrong_caption": 0.153} |
 <!-- MEASURED:END -->
 
 ## Decisions per slot

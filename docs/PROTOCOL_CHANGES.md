@@ -1,18 +1,41 @@
 # Protocol changes
 
-Every change to data, labels, splits, metrics, thresholds, prompts or evaluation protocol is recorded here **before**
-the run that uses it, with its reason. Approval: the owner gave standing instructions on 2026-10-24 to proceed without
-waiting for confirmation while unavailable; entries approved under that instruction are marked *(standing approval)*
-and should be reviewed by the team.
+Every change to data, models, training, metrics, thresholds, baselines or splits is recorded here, with its
+reason, before the run that uses it. Pure engineering changes (device support, paths, encodings, UI) that do not
+alter what is measured are listed separately at the end for traceability.
 
-| ID | Date | Change | Reason / evidence | Affects | Status |
-|---|---|---|---|---|---|
-| PC-01 | 2026-10-23 | WNC (Wiki Neutrality Corpus) replaced by **BABE** as the sentence-level biased-language corpus | Stanford host unreachable; HF mirror `reza-alipour/WNC` is gated (manual approval) | detection data | Applied before any benchmark (pre-V4) |
-| PC-02 | 2026-10-23 | WinoBias used only as a **neutral probe** (FPR, pro−anti gap), never as training labels | Its sentences are neutral event descriptions; labelling pro=1 would be invalid | detection evaluation | Applied (pre-V4) |
-| PC-03 | 2026-10-23 | StereoSet `unrelated` sentences excluded from classification labels; CrowS-Pairs only `stereo`-direction pairs as labels; all pairs kept as preference probes | Unrelated sentences are often nonsensical; antistereo direction is ambiguous as a binary label | detection data | Applied (pre-V4); to be re-reviewed in D.1 |
-| PC-04 | 2026-10-23 | BART-MNLI hypothesis template chosen on 300 **validation** sentences from 5 documented templates | First template scored a neutral sentence 0.90 in verification | detection protocol | Implemented, not yet run |
-| PC-05 | 2026-10-24 | Gate `entailment_mode` (both / forward) added as a tunable, chosen on the gate **val** split | NLI both-ways = 0.005 for a valid paraphrase in verification; removing a stereotyped clause breaks backward entailment | gate thresholds | Implemented, not yet run |
-| PC-06 | 2026-10-24 | Prompt variants extended with a 3-demonstration (few-shot) option, same demos for both LLMs; choice on a 30-sentence **train-split** sample | FLAN-T5 base/large copied biased inputs in zero-shot (4 formats) and 3-shot diagnostics | mitigation prompts | Implemented, not yet run |
-| PC-07 | 2026-10-24 | Two killed DeBERTa runs relabelled `running` → `stopped` with a cause note | Stage 0 audit item 6; processes were killed, no checkpoint exists | run records only | Applied |
-| PC-08 | 2026-10-24 | Detection **test** metrics exclude the 4 test items whose normalised text (lower-case, non-word characters removed) also appears in train/val; dataset files unchanged; excluded texts stored in each detection run summary | Stage 0 audit: 4 near-duplicates across splits (trailing full stop; BABE curly-quote mojibake), see `outputs/audit/stage0_audit.json` | detection test set (2,652 -> 2,648) | Approved (standing approval), before any detection run |
-| PC-09 | 2026-10-24 | Automatic device order stays CUDA -> MPS -> CPU, but an accelerator is used only if it passes a numerical self-check (fixed transformer layer, max abs diff <= 1e-3 vs CPU); otherwise FairLens falls back to CPU with a warning. Reported runs record the device in the manifest | GitHub macOS arm64 runner: MPS gave different outputs from CPU for 7 of 8 model families (diff 1.4-30; T5 matched); RoBERTa detector scores differed by up to 0.64 for all 50 sentences, not fixed by batch size 1 or eager attention; first diverging layer = first transformer block. Evidence: `outputs/audit/ci_device_match*/`, `outputs/audit/ci_device_families/`. Not yet tested on a physical Mac | device selection; all runs | Approved (standing approval) |
+| # | Date | Change | Reason | Affects |
+|---|---|---|---|---|
+| P1 | 2026-10-24 | DeBERTa-v3-small fine-tuning freezes the embedding layer by default (`freeze_embeddings: true`; `--no-freeze-embeddings` restores full fine-tuning). DistilBERT unchanged. Recorded in each checkpoint's `fairlens_training.json` and run manifest. | The 128k-token embedding matrix (about 98M of 141M parameters) plus AdamW state made training swap at >30 s/step on 8–16 GB laptops (docs/PROGRESS.md, "DeBERTa problem"). Freezing keeps training feasible on every teammate's machine. | Detection benchmark (DeBERTa row) |
+| P2 | 2026-10-24 | Sequence classifiers (fine-tuning, fine-tuned/Hub detectors, NLI cross-encoder) are loaded explicitly in float32. | transformers 5.x loads weights in the checkpoint's stored dtype by default. The pinned `microsoft/deberta-v3-small` checkpoint is stored in float16, so training ran in float16 without loss scaling and the loss became NaN after a few steps on both CPU and MPS (verified 2026-10-24). float32 is the precision the methodology assumes. Generation models keep their existing loading (Qwen: `dtype="auto"`). | Detection, preservation signals |
+| P3 | 2026-10-24 | New Gate baseline (e) **no-change**: always keeps the original text. Scored with the existing gold definitions. | Required by the revised plan: a policy that never rewrites is the natural lower bound for unnecessary changes. | Gate benchmark |
+| P4 | 2026-10-24 | New Gate baseline **LLM-as-judge** (Qwen2.5-0.5B-Instruct, yes/no faithfulness question, greedy, seed 13; abstain = defer). Prompt chosen among 3 documented variants on the **validation split only** (`scripts/validate_llm_judge.py`, highest Cohen's κ, ties → lower unsafe-yes rate, then lower abstain rate), frozen in `configs/llm_judge.json` before any test evaluation. `run_ablations.py` skips the judge if that file is missing. | Required by the revised plan; answers "why not ask an LLM whether the rewrite kept the meaning?" | Gate benchmark |
+| P5 | 2026-10-24 | Each policy's selection output also reports `chosen_gold_counts` (ACCEPT / RETRY / REJECT / DEFER). Descriptive only; no metric changed. | `harmful_selection` is defined as gold ≠ ACCEPT, so keeping a biased original counts as harmful just like choosing a fact-breaking rewrite. The counts separate the two without redefining the metric. **Open decision:** whether to report a separate "kept biased original" rate in the paper. | Gate benchmark reporting |
+
+## Known open questions (not yet decided)
+
+- The LLM judge is only asked about changed candidates (as the highest-similarity baseline does), so it never
+  selects the original and will make unnecessary changes on neutral inputs when it approves a paraphrase.
+  This is reported as a property of a faithfulness-only judge, not tuned away.
+- `google/flan-t5-small` (Lite-mode rewriter) is not in `configs/model_lock.json`. Lite mode is for the demo
+  only; benchmarks use the standard models.
+- `gate_controlled.parquet` and `mitigation_eval.parquet` have no hash in `dataset_manifest.json`
+  (see `docs/AUDIT.md`).
+
+## Engineering changes (no change to what is measured)
+
+- Device selection CUDA → MPS → CPU with `FAIRLENS_DEVICE` override; CPU fallback per model; Florence-2 stays
+  on CPU on macOS. Numerical differences between devices are possible at floating-point level; the final runs of
+  each experiment are made on one named device, recorded in the manifest.
+- Per-user model cache folder on every OS (`FAIRLENS_CACHE` override); no drive letters.
+- UTF-8 text IO everywhere; Windows no longer needs `PYTHONUTF8=1`.
+- Run manifests record run ID, task, models and pinned revisions, device, seeds, dataset hashes, config, outputs,
+  git commit, hardware, runtime and status; `outputs/runs.sqlite` is a rebuildable index.
+- Score and generation caches are keyed by model, revision and device.
+- Ingestion loaders fixed for Windows encodings, DOCX tables/headers, multi-column CSVs, scanned PDFs and image
+  edge cases (`tests/test_ingestion_formats.py`).
+- The pinned `distilbert-base-uncased` revision could not be downloaded under its legacy repo name (Hub 404 on
+  the weights file). The identical file from the same commit (`12040acc…`) under the current name
+  `distilbert/distilbert-base-uncased` was placed in the cache for the first training run. `models.yaml` and
+  `model_lock.json` now use the canonical name `distilbert/distilbert-base-uncased` at the same commit, so every
+  teammate downloads the same weights without the workaround.

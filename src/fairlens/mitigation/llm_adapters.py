@@ -8,8 +8,7 @@ import re
 
 from ..config import load_config
 from ..config import pinned_revision
-from ..hardware import place, to_model
-from ..models import manager
+from ..models import manager, place, run_with_cpu_fallback, to_model_device
 from . import prompts
 from .base import Rewriter
 
@@ -27,6 +26,8 @@ def _seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 def clean_output(text: str, source: str) -> str:
@@ -61,9 +62,13 @@ class Seq2SeqRewriter(Rewriter):
         cfg = _gen_cfg()
         _seed(cfg.pop("seed"))
         prompt = prompts.seq2seq_prompt(text, strict, facts)
-        enc = to_model(tok(prompt, return_tensors="pt", truncation=True, max_length=512), model)
-        with torch.inference_mode():
-            ids = model.generate(**enc, **cfg)
+        enc = tok(prompt, return_tensors="pt", truncation=True, max_length=512)
+
+        def run():
+            with torch.inference_mode():
+                return model.generate(**to_model_device(enc, model), **cfg).cpu()
+
+        ids = run_with_cpu_fallback(model, run)
         return clean_output(tok.decode(ids[0], skip_special_tokens=True), text), prompt
 
     def info(self):
@@ -93,9 +98,13 @@ class ChatRewriter(Rewriter):
         _seed(cfg.pop("seed"))
         msgs = prompts.chat_messages(text, strict, facts)
         prompt = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-        enc = to_model(tok(prompt, return_tensors="pt"), model)
-        with torch.inference_mode():
-            ids = model.generate(**enc, **cfg, pad_token_id=tok.eos_token_id)
+        enc = tok(prompt, return_tensors="pt")
+
+        def run():
+            with torch.inference_mode():
+                return model.generate(**to_model_device(enc, model), **cfg, pad_token_id=tok.eos_token_id).cpu()
+
+        ids = run_with_cpu_fallback(model, run)
         out = tok.decode(ids[0, enc["input_ids"].shape[1]:], skip_special_tokens=True)
         return clean_output(out, text), prompt
 

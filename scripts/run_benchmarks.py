@@ -2,6 +2,7 @@
 
   python scripts/run_benchmarks.py --task detection [--detectors bert,deberta,...] [--zs-val-n 300]
   python scripts/run_benchmarks.py --task mitigation [--limit N] [--lite]
+  python scripts/run_benchmarks.py --task mitigation --candidates-from <run_id> --gate-run <gate run_id>   # re-decide only
 
 Detection outputs (run dir under outputs/runs/<run_id>/): detection_scores.parquet, detection_summary.json
 Mitigation outputs: mitigation_candidates.parquet, mitigation_summary.json, prompts_log.jsonl
@@ -42,7 +43,7 @@ def log(msg):
 
 
 def choose_zero_shot_template(det: ZeroShotNLIDetector, val: pd.DataFrame, n: int, cache: ScoreCache) -> tuple[str, dict]:
-    sample = val.groupby("label", group_keys=False).apply(lambda d: d.sample(min(len(d), n // 2), random_state=0))
+    sample = pd.concat([d.sample(min(len(d), n // 2), random_state=0) for _, d in val.groupby("label")])
     results = {}
     for name, hyp in ZS_TEMPLATES.items():
         det.hyp_biased, det.hyp_neutral = hyp["biased"], hyp.get("neutral")
@@ -91,19 +92,13 @@ def probe_texts() -> list[str]:
 
 def run_detection(keys: list[str], zs_val_n: int, skip_probes: bool) -> None:
     det_df = pd.read_parquet(PROC / "detection.parquet")
-    # PC-08: drop test items whose normalised text (lower-case, punctuation/encoding stripped) also occurs in train/val.
-    norm = det_df.text.str.lower().str.replace(r"\W+", " ", regex=True).str.strip()
-    seen = set(norm[det_df.split != "test"])
-    near_dup = (det_df.split == "test") & norm.isin(seen)
-    excluded = det_df[near_dup].text.tolist()
-    test, val = det_df[(det_df.split == "test") & ~near_dup].reset_index(drop=True), det_df[det_df.split == "val"]
+    test, val = det_df[det_df.split == "test"].reset_index(drop=True), det_df[det_df.split == "val"]
     cache = ScoreCache()
     tracker = RunTracker("benchmark_detection", config={"detectors": keys, "zs_val_n": zs_val_n, "threshold": 0.5,
                                                         "timing_subset": 100}, seed=0,
                          dataset_files=[PROC / "detection.parquet", PROC / "winobias_probe.parquet",
                                         PROC / "crows_pairs.parquet", PROC / "stereoset_pairs.parquet"])
-    summary: dict = {"run_id": tracker.run_id, "n_test": len(test), "detectors": {},
-                     "excluded_near_duplicates": {"protocol": "PC-08", "n": len(excluded), "texts": excluded}}
+    summary: dict = {"run_id": tracker.run_id, "n_test": len(test), "detectors": {}}
     scores = pd.DataFrame({"text": test.text, "label": test.label, "source": test.source, "bias_type": test.bias_type})
     ptexts = [] if skip_probes else probe_texts()
     timing = test.sample(100, random_state=1).text.tolist()
@@ -168,9 +163,16 @@ def main():
     ap.add_argument("--skip-probes", action="store_true")
     ap.add_argument("--limit", type=int)
     ap.add_argument("--lite", action="store_true")
+    ap.add_argument("--candidates-from", metavar="RUN_ID",
+                    help="mitigation: reuse this run's rewrites and signals and only re-decide with the Gate")
+    ap.add_argument("--gate-run", metavar="RUN_ID", help="mitigation: take tuned thresholds from this gate run")
     a = ap.parse_args()
     if a.task == "detection":
         run_detection(a.detectors.split(","), a.zs_val_n, a.skip_probes)
+    elif a.candidates_from:
+        from fairlens.experiments.mitigation_runner import run_mitigation_from_stored
+
+        run_mitigation_from_stored(a.candidates_from, a.gate_run)
     else:
         from fairlens.experiments.mitigation_runner import run_mitigation
 

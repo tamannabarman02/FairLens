@@ -6,8 +6,7 @@ from dataclasses import asdict, dataclass
 
 from ..config import load_config
 from ..config import pinned_revision
-from ..hardware import place, to_model
-from ..models import manager
+from ..models import manager, place, run_with_cpu_fallback, to_model_device
 
 
 @dataclass
@@ -63,9 +62,13 @@ class BlipCaptioner(Captioner):
         import torch
 
         proc, model = self._load()
-        inputs = to_model(proc(images=image, return_tensors="pt"), model)
-        with torch.inference_mode():
-            ids = model.generate(**inputs, max_new_tokens=40, num_beams=3)
+        inputs = proc(images=image, return_tensors="pt")
+
+        def run():
+            with torch.inference_mode():
+                return model.generate(**to_model_device(inputs, model), max_new_tokens=40, num_beams=3).cpu()
+
+        ids = run_with_cpu_fallback(model, run)
         return proc.decode(ids[0], skip_special_tokens=True)
 
 
@@ -83,7 +86,7 @@ class FlorenceCaptioner(Captioner):
             rev = self.revision or pinned_revision(getattr(self, "model_id", None) or getattr(self, "model_path", None))
             kw = {"revision": rev} if rev else {}
             return (AutoProcessor.from_pretrained(self.model_id, **kw),
-                    place(Florence2ForConditionalGeneration.from_pretrained(self.model_id, **kw).eval()))
+                    place(Florence2ForConditionalGeneration.from_pretrained(self.model_id, **kw).eval(), allow_mps=False))
 
         return manager().get(f"cap:{self.model_id}", loader)
 
@@ -91,9 +94,13 @@ class FlorenceCaptioner(Captioner):
         import torch
 
         proc, model = self._load()
-        inputs = to_model(proc(text=self.task, images=image, return_tensors="pt"), model)
-        with torch.inference_mode():
-            ids = model.generate(**inputs, max_new_tokens=40, num_beams=3)
+        inputs = proc(text=self.task, images=image, return_tensors="pt")
+
+        def run():
+            with torch.inference_mode():
+                return model.generate(**to_model_device(inputs, model), max_new_tokens=40, num_beams=3).cpu()
+
+        ids = run_with_cpu_fallback(model, run)
         raw = proc.batch_decode(ids, skip_special_tokens=False)[0]
         parsed = proc.post_process_generation(raw, task=self.task, image_size=image.size)
         return parsed.get(self.task, raw) if isinstance(parsed, dict) else str(parsed)
@@ -115,9 +122,13 @@ class VitGpt2Captioner(Captioner):
         import torch
 
         proc, tok, model = self._load()
-        px = proc(images=image, return_tensors="pt").pixel_values.to(model.device)
-        with torch.inference_mode():
-            ids = model.generate(px, max_new_tokens=40, num_beams=3)
+        px = proc(images=image, return_tensors="pt").pixel_values
+
+        def run():
+            with torch.inference_mode():
+                return model.generate(to_model_device(px, model), max_new_tokens=40, num_beams=3).cpu()
+
+        ids = run_with_cpu_fallback(model, run)
         return tok.decode(ids[0], skip_special_tokens=True)
 
 

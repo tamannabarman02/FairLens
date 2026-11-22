@@ -24,7 +24,7 @@ from ..reliability_gate import baselines as B
 from ..reliability_gate.rules import ACCEPT, HUMAN_REVIEW, RETRY, GateConfig, decide, judge
 from ..reliability_gate.signals import compute_signals, normalise
 from .cache import ScoreCache, detector_identity, generator_identity, score_texts
-from .tracking import RunTracker
+from .tracking import RunTracker, rel_path
 
 PROC = PROJECT_ROOT / "datasets" / "processed"
 
@@ -51,7 +51,7 @@ def generate(rewriters: dict, items: list[tuple[str, str]], strict: bool, attemp
         if strict and name == "rule_based":
             continue
         manager().clear()
-        ident = generator_identity(rw) if name != "rule_based" else name
+        ident = generator_identity(rw)
         log(f"  generating with {rw.display} ({ident}) for {len(items)} inputs, strict={strict}")
         t0 = time.perf_counter()
         for k, (iid, text) in enumerate(items):
@@ -97,7 +97,7 @@ def run_mitigation(limit: int | None = None, lite: bool = False, rewriter_keys=N
                    cfg: GateConfig | None = None) -> str:
     df = pd.read_parquet(PROC / "mitigation_eval.parquet")
     if limit:
-        df = df.groupby("label", group_keys=False).apply(lambda d: d.head(max(1, limit * len(d) // len(df))))
+        df = pd.concat([d.head(max(1, limit * len(d) // len(df))) for _, d in df.groupby("label")])
     if cfg is None:
         from ..ui.state import tuned_gate_overrides  # thresholds tuned on the gate *val* split, if a gate run exists
 
@@ -181,7 +181,112 @@ def run_mitigation(limit: int | None = None, lite: bool = False, rewriter_keys=N
     summary["run_id"] = tracker.run_id
     tracker.save_artifact("mitigation_candidates.parquet", cand_df)
     (tracker.dir / "prompts_log.jsonl").write_text("\n".join(json.dumps(r, default=str) for r in gen_log), encoding="utf-8")
-    tracker.manifest.setdefault("artifacts", {})["prompts_log.jsonl"] = str((tracker.dir / "prompts_log.jsonl").relative_to(PROJECT_ROOT))
+    tracker.manifest.setdefault("artifacts", {})["prompts_log.jsonl"] = rel_path(tracker.dir / "prompts_log.jsonl")
+    tracker.save_artifact("mitigation_summary.json", summary)
+    tracker.finish(metrics={"gate_final": summary["gate_final_distribution"],
+                            "policies": {k: {m: v.get(m) for m in ["accepted_fact_failure_rate", "unnecessary_change_rate"]}
+                                         for k, v in summary["policies"].items()}})
+    log(f"done: {tracker.run_id}")
+    return tracker.run_id
+
+
+STORED_SIGNAL_FIELDS = ["changed", "bias_before", "bias_after", "bias_reduction", "detector_std", "confidence_margin",
+                        "uncertainty", "semantic_similarity", "entail_forward", "entail_backward", "entailment_both_ways",
+                        "contradiction", "fact_retention", "fluency", "length_ratio"]
+
+
+def run_mitigation_from_stored(source_run: str, gate_run: str | None = None) -> str:
+    """Re-decide a stored mitigation run with (new) Gate thresholds, reusing its rewrites and signals.
+
+    Rewrites, retry rewrites, detector scores and preservation signals come from `source_run`'s
+    mitigation_candidates.parquet; only the Gate decisions, the retry schedule and the policy metrics are
+    recomputed. Thresholds come from `gate_run`'s gate_summary.json (default: the latest gate run). If the new
+    thresholds would retry an input more often than the source run did, there is no stored rewrite to use and the
+    run stops, listing those inputs, rather than mixing in freshly generated rewrites.
+    """
+    from ..reliability_gate.signals import Signals
+
+    src = PROJECT_ROOT / "outputs" / "runs" / source_run
+    stored = pd.read_parquet(src / "mitigation_candidates.parquet")
+    src_manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
+    if gate_run:
+        gate_summary = json.loads((PROJECT_ROOT / "outputs" / "runs" / gate_run / "gate_summary.json").read_text(encoding="utf-8"))
+        overrides = dict(gate_summary["tuned_rules"])
+    else:
+        from ..ui.state import tuned_gate_overrides
+
+        overrides = tuned_gate_overrides()
+    cfg = GateConfig.from_config(**overrides)
+    df = pd.read_parquet(PROC / "mitigation_eval.parquet")
+    if set(df.id) != set(stored.input_id):
+        raise SystemExit("stored candidates do not cover mitigation_eval.parquet")
+    texts, label, source = dict(zip(df.id, df.text)), dict(zip(df.id, df.label)), dict(zip(df.id, df.source))
+    if any(texts[i] != t for i, t in zip(stored.input_id, stored.input_text)):
+        raise SystemExit("stored input texts differ from mitigation_eval.parquet")
+
+    def to_sig(r) -> Signals:
+        s = Signals(candidate=r.candidate, text=r.text, detector_scores_before=json.loads(r.detector_scores_before),
+                    detector_scores_after=json.loads(r.detector_scores_after), fact_checks=json.loads(r.fact_checks),
+                    **{f: getattr(r, f) for f in STORED_SIGNAL_FIELDS})
+        s.changed = bool(s.changed)
+        return s
+
+    by_input = {iid: list(g.itertuples()) for iid, g in stored.groupby("input_id", sort=False)}
+    all_sigs = {iid: [to_sig(r) for r in rows] for iid, rows in by_input.items()}
+    sigs = {iid: [s for s in ss if "retry" not in s.candidate] for iid, ss in all_sigs.items()}
+    tracker = RunTracker("benchmark_mitigation", config={"n_inputs": len(df), "gate": cfg.__dict__ | {"disabled": sorted(cfg.disabled)},
+                                                         "reused_candidates_from": source_run,
+                                                         "reused_candidates_device": src_manifest.get("device"),
+                                                         "thresholds_from_gate_run": gate_run,
+                                                         "rewriters": src_manifest.get("config", {}).get("rewriters"),
+                                                         "detectors": src_manifest.get("config", {}).get("detectors")},
+                         seed=13, dataset_files=[PROC / "mitigation_eval.parquet", src / "mitigation_candidates.parquet"],
+                         models=src_manifest.get("models", {}))
+    log(f"mitigation re-decision {tracker.run_id}: {len(df)} inputs from {source_run}, thresholds {overrides}")
+    static = {iid: decide(s, cfg, allow_retry=False) for iid, s in sigs.items()}
+    dec = {iid: decide(s, cfg, allow_retry=True) for iid, s in sigs.items()}
+    missing = []
+    for attempt in range(1, cfg.max_retries + 1):
+        todo = [iid for iid, d in dec.items() if d.decision == RETRY]
+        if not todo:
+            break
+        log(f"retry {attempt}: {len(todo)} inputs (stored rewrites)")
+        for iid in todo:
+            new = [s for s in all_sigs[iid] if s.candidate.endswith(f"_retry{attempt}")]
+            if not new:
+                missing.append((iid, attempt))
+                continue
+            sigs[iid] = sigs[iid] + new
+            dec[iid] = decide(sigs[iid], cfg, allow_retry=True, attempts=attempt)
+    if missing:
+        tracker.finish(status="failed", metrics={"missing_stored_retries": len(missing)})
+        raise SystemExit(f"{len(missing)} retries needed that the source run never generated, e.g. {missing[:10]}")
+    for iid, d in dec.items():
+        if d.decision == RETRY:
+            final = decide(sigs[iid], cfg, allow_retry=False, attempts=d.attempts)
+            if final.decision != ACCEPT:
+                final.reason_code, final.reason = "RETRIES_EXHAUSTED", "No candidate passed after strict retries; escalated to human review."
+            dec[iid] = final
+
+    stored_rows = {(r.input_id, r.candidate): r for r in stored.itertuples()}
+    rows = []
+    for iid, ss in sigs.items():
+        biased = static[iid].input_biased
+        for s in ss:
+            v = judge(s, cfg, biased)
+            r = stored_rows[(iid, s.candidate)]
+            rows.append({"input_id": iid, "source": source[iid], "gold_label": int(label[iid]), "input_text": texts[iid],
+                         **{k: val for k, val in s.to_dict().items() if k not in {"fact_checks", "detector_scores_before", "detector_scores_after"}},
+                         "fact_checks": r.fact_checks, "detector_scores_after": r.detector_scores_after,
+                         "detector_scores_before": r.detector_scores_before,
+                         "verdict": v.decision, "reasons": ",".join(v.reasons), "input_biased_pred": biased,
+                         "ref_similarity": r.ref_similarity, "final_decision": dec[iid].decision, "final_choice": dec[iid].chosen})
+    cand_df = pd.DataFrame(rows)
+    rewriters = {k: None for k in (src_manifest.get("config", {}).get("rewriters") or {})}
+    summary = summarise(cand_df, sigs, dec, static, label, cfg, rewriters)
+    summary["run_id"] = tracker.run_id
+    summary["reused_candidates_from"] = source_run
+    tracker.save_artifact("mitigation_candidates.parquet", cand_df)
     tracker.save_artifact("mitigation_summary.json", summary)
     tracker.finish(metrics={"gate_final": summary["gate_final_distribution"],
                             "policies": {k: {m: v.get(m) for m in ["accepted_fact_failure_rate", "unnecessary_change_rate"]}
@@ -225,8 +330,7 @@ def summarise(cand: pd.DataFrame, sigs, dec, static, label, cfg, rewriters) -> d
 
     first_llm = next((k for k in rewriters if k != "rule_based"), "rule_based")
     policies = {"fairlens_gate": None, "fairlens_gate_retry": None, "lowest_bias": B.lowest_bias,
-                "highest_similarity": B.highest_similarity, f"always_{first_llm}": B.always_first(first_llm),
-                "no_change": B.no_change}
+                "highest_similarity": B.highest_similarity, f"always_{first_llm}": B.always_first(first_llm)}
     policies.update({f"random_s{s}": B.random_policy(s) for s in range(5)})
     by_input = {iid: {r.candidate: r for r in g.itertuples()} for iid, g in cand.groupby("input_id")}
     pol_out = {}

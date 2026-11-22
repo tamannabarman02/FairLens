@@ -1,11 +1,16 @@
 """Reliability Gate evaluation on the controlled gold set: rules vs val-tuned rules vs learned gate vs
-simpler selection baselines, plus signal ablations with bootstrap CIs over 3 perturbation seeds.
+simpler selection baselines (incl. no-change and an LLM judge), plus signal ablations with bootstrap CIs over 3 perturbation seeds.
 
   python scripts/run_ablations.py
-Outputs (outputs/runs/<run_id>/): gate_signals.parquet, gate_summary.json
+  python scripts/run_ablations.py --signals-from <gate run id>   # reuse stored signals (only the split changed)
+Outputs (outputs/runs/<run_id>/): gate_signals.parquet, gate_summary.json, llm_judge_prompts_log.jsonl
+The LLM-judge baseline uses the prompt variant chosen on the val split by scripts/validate_llm_judge.py
+(configs/llm_judge.json); without that file it is skipped.
 """
 from __future__ import annotations
 
+import argparse
+import hashlib
 import itertools
 import json
 import sys
@@ -25,7 +30,9 @@ from fairlens.evaluation.preservation import PreservationSuite  # noqa: E402
 from fairlens.experiments.cache import ScoreCache, detector_identity  # noqa: E402
 from fairlens.experiments.mitigation_runner import PrecomputedSuite, preserve_all, score_all  # noqa: E402
 from fairlens.experiments.tracking import RunTracker  # noqa: E402
+from fairlens.models import manager  # noqa: E402
 from fairlens.reliability_gate import baselines as B  # noqa: E402
+from fairlens.reliability_gate import llm_judge as J  # noqa: E402
 from fairlens.reliability_gate.learned import LearnedGate  # noqa: E402
 from fairlens.reliability_gate.rules import ACCEPT, HUMAN_REVIEW, GateConfig, judge  # noqa: E402
 from fairlens.reliability_gate.signals import SIGNAL_GROUPS, compute_signals  # noqa: E402
@@ -51,6 +58,47 @@ def build_signals(gate: pd.DataFrame, detectors, cache) -> pd.DataFrame:
         for r in g.itertuples():
             rows.append({**r._asdict(), "sig": sigs[r.candidate]})
     return pd.DataFrame(rows).drop(columns=["Index"])
+
+
+SIGNAL_FIELDS = ["changed", "bias_before", "bias_after", "bias_reduction", "detector_std", "confidence_margin",
+                 "uncertainty", "semantic_similarity", "entail_forward", "entail_backward", "entailment_both_ways",
+                 "contradiction", "fact_retention", "fluency", "length_ratio"]
+
+
+def load_stored_signals(gate: pd.DataFrame, run_id: str) -> tuple[pd.DataFrame, dict]:
+    """Rebuild the signal table from a previous gate run's gate_signals.parquet instead of re-scoring.
+
+    Signals depend only on the (input, candidate) texts and the models, not on the val/test split, so a stored
+    table can be reused when only the split changes. Every (input_id, seed, candidate) must exist in both tables
+    with identical texts, gold label, perturbation and input label; otherwise the run stops.
+    """
+    from fairlens.reliability_gate.signals import Signals
+
+    src = ROOT / "outputs" / "runs" / run_id
+    stored = pd.read_parquet(src / "gate_signals.parquet")
+    key = ["input_id", "seed", "candidate"]
+    if stored.duplicated(key).any() or gate.duplicated(key).any():
+        raise SystemExit("duplicate (input_id, seed, candidate) keys")
+    m = gate.merge(stored, on=key, how="outer", suffixes=("", "_stored"), indicator=True)
+    if (m["_merge"] != "both").any():
+        raise SystemExit(f"stored signals do not cover the gate set: {m['_merge'].value_counts().to_dict()}")
+    for col in ["input_text", "candidate_text", "gold", "perturbation", "input_label"]:
+        if not (m[col] == m[f"{col}_stored"]).all():
+            raise SystemExit(f"stored signals differ from the gate set in column {col!r}")
+    by_key = stored.set_index(key)
+    rows = []
+    for (iid, seed), g in gate.groupby(["input_id", "seed"]):
+        for r in g.itertuples():
+            s = by_key.loc[(iid, seed, r.candidate)]
+            sig = Signals(candidate=r.candidate, text=r.candidate_text, detector_scores_before={}, detector_scores_after={},
+                          fact_checks=json.loads(s.fact_checks), **{f: s[f] for f in SIGNAL_FIELDS})
+            sig.changed = bool(sig.changed)
+            rows.append({**r._asdict(), "sig": sig})
+    manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
+    meta = {"signals_from": run_id, "signals_file_sha256": hashlib.sha256((src / "gate_signals.parquet").read_bytes()).hexdigest(),
+            "signals_device": manifest.get("device"), "signals_detectors": manifest.get("config", {}).get("detectors", []),
+            "signals_models": {k: v for k, v in manifest.get("models", {}).items() if k != "llm_judge"}}
+    return pd.DataFrame(rows).drop(columns=["Index"]), meta
 
 
 def candidate_metrics(gold: list[str], pred: list[str], perturb: list[str] | None = None) -> dict:
@@ -80,19 +128,20 @@ def _f1(t, p):
 
 def selection_metrics(df: pd.DataFrame, choose) -> dict:
     """Input-level: each policy picks a candidate (or None = defer). Success = chosen gold ACCEPT."""
-    succ, harm, defer, unnec = [], [], [], []
+    succ, harm, defer, unnec, chosen_gold = [], [], [], [], []
     for (iid, seed), g in df.groupby(["input_id", "seed"]):
         sigs = list(g.sig)
         c = choose(sigs, g)
         if c is None:
-            succ.append(0); harm.append(0); defer.append(1)
+            succ.append(0); harm.append(0); defer.append(1); chosen_gold.append("DEFER")
         else:
             gold = g.set_index("candidate").gold[c]
-            succ.append(int(gold == ACCEPT)); harm.append(int(gold != ACCEPT)); defer.append(0)
+            succ.append(int(gold == ACCEPT)); harm.append(int(gold != ACCEPT)); defer.append(0); chosen_gold.append(gold)
         if g.input_label.iloc[0] == 0:
             unnec.append(int(c is not None and c != "original"))
     return {"success": M.bootstrap_ci(succ), "harmful_selection": M.bootstrap_ci(harm), "defer": M.bootstrap_ci(defer),
-            "unnecessary_change_neutral": M.bootstrap_ci(unnec), "_succ": succ, "_harm": harm}
+            "unnecessary_change_neutral": M.bootstrap_ci(unnec), "chosen_gold_counts": dict(Counter(chosen_gold)),
+            "_succ": succ, "_harm": harm}
 
 
 def rule_choose(cfg, oracle=False):
@@ -114,20 +163,25 @@ def learned_choose(model: LearnedGate):
     return f
 
 
-def load_judge() -> dict | None:
-    """Frozen judge (prompt + threshold chosen on val) and its scores, from the latest judge_validation run."""
-    from fairlens.experiments.tracking import latest_run, load_manifest
-
-    r = latest_run("judge_validation")
-    if not r:
-        return None
-    d = Path(r["manifest_path"]).parent
-    v = json.loads((d / "judge_validation.json").read_text(encoding="utf-8"))
-    sc = pd.read_parquet(d / "judge_scores.parquet")
-    m = load_manifest(r)
-    return {"run_id": r["run_id"], "prompt": v["chosen_prompt"], "threshold": v["threshold"],
-            "val_agreement": m.get("metrics", {}).get("val_all_seeds"),
-            "scores": {(o, t): p for o, t, p in zip(sc.input_text, sc.candidate_text, sc.p_yes)}}
+def build_llm_judge(test: pd.DataFrame, cache: ScoreCache):
+    """Judge with the val-selected prompt variant, pre-asked on every changed test pair; None if not selected."""
+    sel = J.load_selection()
+    if sel is None:
+        log("SKIPPING llm_judge baseline: configs/llm_judge.json not found. Run scripts/validate_llm_judge.py "
+            "first (selects the prompt on the val split); the prompt is never chosen on test.")
+        return None, None
+    if sel.get("limit"):
+        log(f"note: llm_judge variant was selected on a limited val subset (limit={sel['limit']})")
+    manager().clear()
+    gen = J.QwenJudgeGenerator(large=bool(sel.get("large", False)))
+    if sel.get("model") and sel["model"] != gen.identity:
+        log(f"note: llm_judge validated with {sel['model']}, running {gen.identity}")
+    llm_j = J.LLMJudge(gen, sel["variant"], cache)
+    pairs = [(o, c) for o, c, s in zip(test.input_text, test.candidate_text, test.sig) if s.changed]
+    log(f"llm_judge ({sel['variant']}): {len(set(pairs))} test pairs")
+    llm_j.ask_many(pairs, progress=lambda k, n: log(f"  judge {k}/{n}") if k % 100 == 0 or k == n else None)
+    manager().clear()
+    return llm_j, sel
 
 
 def tune_rules(val: pd.DataFrame, base: GateConfig) -> tuple[GateConfig, list[dict]]:
@@ -145,16 +199,29 @@ def tune_rules(val: pd.DataFrame, base: GateConfig) -> tuple[GateConfig, list[di
 
 
 def main():
-    gate = pd.read_parquet(PROC / "gate_controlled.parquet")
-    detectors = build_detectors()
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--gate-file", type=Path, default=PROC / "gate_controlled.parquet")
+    ap.add_argument("--signals-from", metavar="RUN_ID", default=None,
+                    help="reuse gate_signals.parquet of this gate run instead of scoring with the models")
+    ap.add_argument("--skip-llm-judge", action="store_true", help="leave out the LLM-judge baseline")
+    args = ap.parse_args()
+    gate = pd.read_parquet(args.gate_file)
     cache = ScoreCache()
     base = GateConfig.from_config()
+    if args.signals_from:
+        df, reuse = load_stored_signals(gate, args.signals_from)
+        detector_names, models = list(reuse["signals_detectors"]), dict(reuse["signals_models"])
+    else:
+        detectors = build_detectors()
+        detector_names, models, reuse = list(detectors), {k: detector_identity(d) for k, d in detectors.items()}, None
     tracker = RunTracker("benchmark_gate", config={"gate_default": {k: v for k, v in base.__dict__.items() if k != "disabled"},
-                                                   "detectors": list(detectors), "seeds": sorted(gate.seed.unique().tolist())},
-                         seed=0, dataset_files=[PROC / "gate_controlled.parquet"],
-                         models={k: detector_identity(d) for k, d in detectors.items()})
-    log(f"gate run {tracker.run_id}: {len(gate)} candidates, detectors {list(detectors)}")
-    df = build_signals(gate, detectors, cache)
+                                                   "detectors": detector_names, "seeds": sorted(gate.seed.unique().tolist()),
+                                                   "reused_signals": reuse, "skip_llm_judge": args.skip_llm_judge},
+                         seed=0, dataset_files=[args.gate_file], models=models)
+    log(f"gate run {tracker.run_id}: {len(gate)} candidates, detectors {detector_names}"
+        + (f", signals reused from {args.signals_from}" if reuse else ""))
+    if reuse is None:
+        df = build_signals(gate, detectors, cache)
     val, test = df[df.split == "val"], df[df.split == "test"]
     summary: dict = {"run_id": tracker.run_id, "n_candidates": len(df), "n_inputs": int(gate.input_id.nunique()),
                      "seeds": sorted(gate.seed.unique().tolist()), "gold_distribution_test": dict(Counter(test.gold))}
@@ -183,41 +250,43 @@ def main():
 
     policies = {"fairlens_gate_default": rule_choose(base), "fairlens_gate_tuned": rule_choose(tuned),
                 "learned_logreg": learned_choose(learned["logreg"]), "learned_tree": learned_choose(learned["tree"]),
-                "lowest_bias": lambda s, g: B.lowest_bias(s), "highest_similarity": lambda s, g: B.highest_similarity(s)}
-    policies["no_change"] = lambda s, g: B.no_change(s)
-    judge = load_judge()
-    if judge:
-        jscores, jthr = judge["scores"], judge["threshold"]
-        summary["judge"] = {k: judge[k] for k in ["run_id", "prompt", "threshold", "val_agreement"]}
-
-        def judge_pol(s, g):
-            per = {c: jscores.get((g.input_text.iloc[0], t)) for c, t in zip(g.candidate, g.candidate_text)}
-            return B.llm_judge_policy({c: v for c, v in per.items() if v is not None}, jthr, base.biased_input_threshold)(s)
-        policies["llm_judge"] = judge_pol
-    else:
-        summary["judge"] = {"status": "no completed judge_validation run; LLM-judge baseline not evaluated"}
+                "lowest_bias": lambda s, g: B.lowest_bias(s), "highest_similarity": lambda s, g: B.highest_similarity(s),
+                "no_change": lambda s, g: B.no_change(s)}
     for k in range(5):
         pol = B.random_policy(100 + k)
         policies[f"random_s{k}"] = lambda s, g, pol=pol: pol(s)
+    llm_j, llm_j_sel = (None, None) if args.skip_llm_judge else build_llm_judge(test, cache)
+    if llm_j is not None:
+        judge_pol = J.judge_policy(llm_j)
+        policies["llm_judge"] = lambda s, g: judge_pol(s)
+        tracker.add_models({"llm_judge": llm_j.identity})
+        summary["llm_judge"] = {k: llm_j_sel.get(k) for k in ["variant", "model", "selected_on", "limit", "run_id"]}
+    else:
+        summary["skipped"] = {"llm_judge": "--skip-llm-judge" if args.skip_llm_judge else
+                              "configs/llm_judge.json missing (run scripts/validate_llm_judge.py)"}
     sel = {n: selection_metrics(test, f) for n, f in policies.items()}
     rnd = [k for k in sel if k.startswith("random_s")]
     sel["random_mean"] = {m: {"mean": float(np.mean([sel[k][m]["mean"] for k in rnd]))} for m in
                           ["success", "harmful_selection", "defer", "unnecessary_change_neutral"]}
     ref = sel["fairlens_gate_tuned"]
-    for n in [k for k in sel if k != "fairlens_gate_tuned" and not k.startswith("random")]:
+    for n in [k for k in ["lowest_bias", "highest_similarity", "no_change", "llm_judge", "fairlens_gate_default"] if k in sel]:
         sel[n]["diff_success_vs_tuned_gate"] = M.paired_bootstrap_diff(sel[n]["_succ"], ref["_succ"])
         sel[n]["diff_harm_vs_tuned_gate"] = M.paired_bootstrap_diff(sel[n]["_harm"], ref["_harm"])
     summary["selection"] = {k: {m: v for m, v in d.items() if not m.startswith("_")} for k, d in sel.items() if k not in rnd}
 
     abl = {}
     full = candidate_metrics(test.gold.tolist(), [judge(s, tuned).decision for s in test.sig])
-    full_unsafe = [int(judge(s, tuned).decision == ACCEPT and g != ACCEPT) for s, g in zip(test.sig, test.gold)]
-    full_correct = [int(judge(s, tuned).decision == g) for s, g in zip(test.sig, test.gold)]
+    # Unsafe-accept is P(accept | gold != ACCEPT): its paired difference is taken over the gold != ACCEPT
+    # candidates only, so Δ equals the difference of the unsafe-accept rates reported in the same table.
+    not_acc = [g != ACCEPT for g in test.gold]
+    full_pred = [judge(s, tuned).decision for s in test.sig]
+    full_unsafe = [int(p == ACCEPT) for p, na in zip(full_pred, not_acc) if na]
+    full_correct = [int(p == g) for p, g in zip(full_pred, test.gold)]
     for grp in SIGNAL_GROUPS:
         cfg = replace(tuned, disabled=frozenset({grp}))
         pred = [judge(s, cfg).decision for s in test.sig]
         m = candidate_metrics(test.gold.tolist(), pred, test.perturbation.tolist())
-        unsafe = [int(p == ACCEPT and g != ACCEPT) for p, g in zip(pred, test.gold)]
+        unsafe = [int(p == ACCEPT) for p, na in zip(pred, not_acc) if na]
         correct = [int(p == g) for p, g in zip(pred, test.gold)]
         per_seed = {}
         for sd, gs in test.assign(pred=pred).groupby("seed"):
@@ -240,11 +309,16 @@ def main():
                          "pred_default": judge(s, base).decision, "pred_tuned": judge(s, tuned).decision,
                          "reasons_tuned": ",".join(judge(s, tuned).reasons)})
     tracker.save_artifact("gate_signals.parquet", pd.DataFrame(sig_rows))
+    extra = {}
+    if llm_j is not None:
+        p = llm_j.write_log(tracker.dir / "llm_judge_prompts_log.jsonl")
+        extra[p.name] = p
     tracker.save_artifact("gate_summary.json", summary)
     tracker.finish(metrics={"tuned_macro_f1": cand["rules_val_tuned"]["macro_f1_3class"],
                             "tuned_unsafe_accept": cand["rules_val_tuned"]["unsafe_accept_rate"],
                             "gate_success": summary["selection"]["fairlens_gate_tuned"]["success"]["mean"],
-                            "lowest_bias_success": summary["selection"]["lowest_bias"]["success"]["mean"]})
+                            "lowest_bias_success": summary["selection"]["lowest_bias"]["success"]["mean"]},
+                   artifacts=extra)
     for k, v in cand.items():
         log(f"{k:28s} macroF1 {v['macro_f1_3class']:.3f} unsafe-accept {v['unsafe_accept_rate']:.3f} review {v['human_review_rate']:.3f}")
     for k, v in summary["selection"].items():

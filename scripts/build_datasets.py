@@ -63,9 +63,9 @@ def detok(tokens) -> str:
     return s
 
 
-def build(out: Path = OUT) -> None:
+def build() -> None:
     RAW.mkdir(parents=True, exist_ok=True)
-    out.mkdir(parents=True, exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     sources: dict[str, dict] = {}
     rows: list[dict] = []
 
@@ -104,7 +104,7 @@ def build(out: Path = OUT) -> None:
     cp_path = RAW / "crows_pairs_anonymized.csv"
     if not cp_path.exists():
         urllib.request.urlretrieve(CROWS_URL, cp_path)
-    cp = pd.read_csv(cp_path)
+    cp = pd.read_csv(cp_path, encoding="utf-8")
     sources["CrowS-Pairs"] = {"url": CROWS_URL, "sha256": hashlib.sha256(cp_path.read_bytes()).hexdigest(), "license": "CC BY-SA 4.0"}
     cp["pair_id"] = "cp:" + cp["Unnamed: 0"].astype(str)
     cp["bias_type_n"] = cp["bias_type"].map(lambda b: CROWS_TYPE.get(b, b))
@@ -146,7 +146,7 @@ def build(out: Path = OUT) -> None:
     manifest = {"built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "seed": SEED,
                 "sources": sources, "files": {}, "duplicates_removed": int(dupes)}
     for name, df in files.items():
-        p = out / name
+        p = OUT / name
         df.to_parquet(p, index=False)
         manifest["files"][name] = {"rows": len(df), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()[:16]}
     manifest["detection_counts"] = (det.groupby(["source", "split", "label"]).size()
@@ -154,15 +154,11 @@ def build(out: Path = OUT) -> None:
     # leakage check across splits by group
     g = det.groupby("group_id")["split"].nunique()
     manifest["groups_spanning_splits"] = int((g > 1).sum())
-    (out / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (OUT / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in manifest.items() if k != "detection_counts"}, indent=2))
     print(det.groupby(["split", "label"]).size().unstack())
     print(det.groupby(["source", "split"]).size().unstack())
 
 
 if __name__ == "__main__":
-    import argparse
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=Path, default=OUT, help="output folder (use a temp folder to verify hashes without overwriting)")
-    build(ap.parse_args().out)
+    build()

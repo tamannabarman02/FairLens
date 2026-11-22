@@ -1,0 +1,136 @@
+{
+  "variant": "checker_system",
+  "selected_on": "val",
+  "model": "llm_judge|Qwen/Qwen2.5-0.5B-Instruct|7ae557604adf67be50417f59c2c2f167def9a775|greedy|4|seed13",
+  "large": false,
+  "limit": null,
+  "n_rows": 1059,
+  "n_inputs": 68,
+  "selection_rule": "max cohen_kappa, then min unsafe_yes_rate, then min abstain_rate",
+  "validation_metrics": {
+    "plain": {
+      "overall": {
+        "n": 1059,
+        "accuracy": 0.4098205854579792,
+        "cohen_kappa": 0.10421006045693904,
+        "unsafe_yes_rate": 0.6753528773072747,
+        "yes_recall": 0.9782608695652174,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 757,
+          "no": 302,
+          "abstain": 0
+        }
+      },
+      "input_label_0": {
+        "n": 321,
+        "accuracy": 0.2897196261682243,
+        "cohen_kappa": 0.0,
+        "unsafe_yes_rate": 0.7102803738317757,
+        "yes_recall": null,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 228,
+          "no": 93,
+          "abstain": 0
+        }
+      },
+      "input_label_1": {
+        "n": 738,
+        "accuracy": 0.462059620596206,
+        "cohen_kappa": 0.15381149600568378,
+        "unsafe_yes_rate": 0.6566666666666666,
+        "yes_recall": 0.9782608695652174,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 529,
+          "no": 209,
+          "abstain": 0
+        }
+      }
+    },
+    "checker_system": {
+      "overall": {
+        "n": 1059,
+        "accuracy": 0.8347497639282342,
+        "cohen_kappa": 0.40477911066146355,
+        "unsafe_yes_rate": 0.13463626492942454,
+        "yes_recall": 0.6304347826086957,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 211,
+          "no": 848,
+          "abstain": 0
+        }
+      },
+      "input_label_0": {
+        "n": 321,
+        "accuracy": 0.7040498442367601,
+        "cohen_kappa": 0.0,
+        "unsafe_yes_rate": 0.29595015576323985,
+        "yes_recall": null,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 95,
+          "no": 226,
+          "abstain": 0
+        }
+      },
+      "input_label_1": {
+        "n": 738,
+        "accuracy": 0.8915989159891599,
+        "cohen_kappa": 0.6201652126920405,
+        "unsafe_yes_rate": 0.04833333333333333,
+        "yes_recall": 0.6304347826086957,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 116,
+          "no": 622,
+          "abstain": 0
+        }
+      }
+    },
+    "question_first": {
+      "overall": {
+        "n": 1059,
+        "accuracy": 0.7799811142587346,
+        "cohen_kappa": 0.35902711211901595,
+        "unsafe_yes_rate": 0.21715526601520088,
+        "yes_recall": 0.7608695652173914,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 305,
+          "no": 754,
+          "abstain": 0
+        }
+      },
+      "input_label_0": {
+        "n": 321,
+        "accuracy": 0.632398753894081,
+        "cohen_kappa": 0.0,
+        "unsafe_yes_rate": 0.367601246105919,
+        "yes_recall": null,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 118,
+          "no": 203,
+          "abstain": 0
+        }
+      },
+      "input_label_1": {
+        "n": 738,
+        "accuracy": 0.8441734417344173,
+        "cohen_kappa": 0.549134606190036,
+        "unsafe_yes_rate": 0.13666666666666666,
+        "yes_recall": 0.7608695652173914,
+        "abstain_rate": 0.0,
+        "answers": {
+          "yes": 187,
+          "no": 551,
+          "abstain": 0
+        }
+      }
+    }
+  },
+  "run_id": "20261115-215857-llm_judge_validation-8ad9d4"
+}

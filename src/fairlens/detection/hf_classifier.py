@@ -8,8 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from ..config import pinned_revision
-from ..hardware import place, to_model
-from ..models import manager
+from ..models import manager, place, run_with_cpu_fallback, to_model_device
 from .base import Detector, Span
 
 
@@ -34,7 +33,7 @@ class HFClassifierDetector(Detector):
             rev = self.revision or pinned_revision(getattr(self, "model_id", None) or getattr(self, "model_path", None))
             kw = {"revision": rev} if rev else {}
             tok = AutoTokenizer.from_pretrained(self.model_path, **kw)
-            model = place(AutoModelForSequenceClassification.from_pretrained(self.model_path, **kw).eval())
+            model = place(AutoModelForSequenceClassification.from_pretrained(self.model_path, dtype="float32", **kw).eval())
             return tok, model
 
         return manager().get(f"det:{self.model_path}", loader)
@@ -52,10 +51,14 @@ class HFClassifierDetector(Detector):
         import torch
 
         tok, model = self._load()
-        enc = to_model(tok(texts, padding=True, truncation=True, max_length=self.max_length, return_tensors="pt"), model)
-        with torch.inference_mode():
-            logits = model(**enc).logits
-        return torch.softmax(logits.float(), dim=-1).cpu().numpy()
+        enc = tok(texts, padding=True, truncation=True, max_length=self.max_length, return_tensors="pt")
+
+        def run():
+            with torch.inference_mode():
+                logits = model(**to_model_device(enc, model)).logits
+            return torch.softmax(logits.float(), dim=-1).cpu().numpy()
+
+        return run_with_cpu_fallback(model, run)
 
     def _scores(self, texts):
         tok, model = self._load()
@@ -115,7 +118,7 @@ class ZeroShotNLIDetector(Detector):
             rev = self.revision or pinned_revision(getattr(self, "model_id", None) or getattr(self, "model_path", None))
             kw = {"revision": rev} if rev else {}
             tok = AutoTokenizer.from_pretrained(self.model_id, **kw)
-            model = place(AutoModelForSequenceClassification.from_pretrained(self.model_id, **kw).eval())
+            model = place(AutoModelForSequenceClassification.from_pretrained(self.model_id, dtype="float32", **kw).eval())
             return tok, model
 
         return manager().get(f"nli:{self.model_id}", loader)
@@ -127,8 +130,12 @@ class ZeroShotNLIDetector(Detector):
         ent = {v.lower(): int(k) for k, v in model.config.id2label.items()}["entailment"]
         enc = tok(premises, [hypothesis] * len(premises), padding=True, truncation="only_first",
                   max_length=self.max_length, return_tensors="pt")
-        with torch.inference_mode():
-            return model(**to_model(enc, model)).logits[:, ent].float().cpu().numpy()
+
+        def run():
+            with torch.inference_mode():
+                return model(**to_model_device(enc, model)).logits[:, ent].float().cpu().numpy()
+
+        return run_with_cpu_fallback(model, run)
 
     def _ec_logits(self, premises: list[str], hypothesis: str) -> np.ndarray:
         """Return entailment-minus-contradiction logits (single-hypothesis zero-shot)."""
@@ -138,8 +145,12 @@ class ZeroShotNLIDetector(Detector):
         lab = {v.lower(): int(k) for k, v in model.config.id2label.items()}
         enc = tok(premises, [hypothesis] * len(premises), padding=True, truncation="only_first",
                   max_length=self.max_length, return_tensors="pt")
-        with torch.inference_mode():
-            lg = model(**to_model(enc, model)).logits.float().cpu().numpy()
+
+        def run():
+            with torch.inference_mode():
+                return model(**to_model_device(enc, model)).logits.float().cpu().numpy()
+
+        lg = run_with_cpu_fallback(model, run)
         return lg[:, lab["entailment"]] - lg[:, lab["contradiction"]]
 
     def _scores(self, texts):
@@ -160,9 +171,12 @@ class ZeroShotNLIDetector(Detector):
         hyps = list(self.CATEGORY_HYPOTHESES.values())
         enc = tok([text] * len(hyps), hyps, padding=True, truncation="only_first",
                   max_length=self.max_length, return_tensors="pt")
-        with torch.inference_mode():
-            lg = model(**to_model(enc, model)).logits[:, [lab["contradiction"], lab["entailment"]]].float().cpu()
-        p = torch.softmax(lg, dim=-1)[:, 1].numpy()
+
+        def run():
+            with torch.inference_mode():
+                return model(**to_model_device(enc, model)).logits[:, [lab["contradiction"], lab["entailment"]]].float().cpu()
+
+        p = torch.softmax(run_with_cpu_fallback(model, run), dim=-1)[:, 1].numpy()
         return dict(zip(self.CATEGORY_HYPOTHESES, map(float, p)))
 
     def info(self) -> dict:

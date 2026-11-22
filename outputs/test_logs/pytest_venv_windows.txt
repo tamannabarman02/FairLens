@@ -1,0 +1,7 @@
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_gate.py::test_learned_gate_fits - ImportError: DLL load fai...
+1 failed, 245 passed, 1 warning in 116.94s (0:01:56)
+2/246 tests collected (244 deselected) in 4.82s

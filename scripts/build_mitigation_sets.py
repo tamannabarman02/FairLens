@@ -6,7 +6,8 @@ gate_controlled.parquet   (input, candidate, gold) triples. Gold is known by con
     biased input : reference rewrite -> ACCEPT; unchanged original -> RETRY; seeded perturbations of the
                    reference (number / negation / entity / role / antonym / addition / truncation / quote) -> REJECT
     neutral input: unchanged -> ACCEPT; needless paraphrase or any perturbation -> REJECT
-    Inputs are split 50/50 into val (for learned gate + threshold tuning) and test, per seed.
+    Each source sentence is assigned once to val (for learned gate + threshold tuning) or test, stratified by
+    label with a fixed seed, so all perturbation seeds of a sentence stay in the same half (68 / 68 sentences).
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ from fairlens.evaluation.facts import NEGATION_CUES, ROLE_WORDS, _nlp  # noqa: E
 OUT = ROOT / "datasets" / "processed"
 AUTHORED = ROOT / "datasets" / "curated" / "authored_cases.jsonl"
 SEEDS = [11, 22, 33]
+SPLIT_SEED = 42
 
 ANTONYMS = {
     "approved": "rejected", "rejected": "approved", "increase": "decrease", "rose": "fell", "fell": "rose",
@@ -151,11 +153,37 @@ PERTURB = {"number_changed": p_number, "negation_flipped": p_negation, "entity_s
            "truncated": p_truncate, "quote_altered": p_quote}
 
 
-def controlled(auth: pd.DataFrame, seed: int) -> pd.DataFrame:
+def sentence_split(auth: pd.DataFrame) -> dict[str, str]:
+    """One val/test assignment per source sentence, stratified by label, shared by every perturbation seed.
+
+    Odd-sized label groups are balanced in opposite directions (biased: extra sentence to val; neutral: extra
+    sentence to test) so that val and test each hold half of the sentences.
+    """
+    rng = random.Random(SPLIT_SEED)
+    split = {}
+    for label, extra_to_val in ((1, True), (0, False)):
+        ids = sorted(auth.loc[auth.label == label, "id"])
+        rng.shuffle(ids)
+        n_val = (len(ids) + 1) // 2 if extra_to_val else len(ids) // 2
+        split.update({i: ("val" if k < n_val else "test") for k, i in enumerate(ids)})
+    return split
+
+
+def check_no_leakage(gate: pd.DataFrame) -> None:
+    """Fail if any source sentence (or its reference rewrite) appears in both val and test."""
+    halves = gate.groupby("input_id").split.nunique()
+    leaked = sorted(halves[halves > 1].index)
+    texts = gate.groupby("input_text").split.nunique()
+    if leaked or (texts > 1).any():
+        raise SystemExit(f"gate_controlled leakage: {len(leaked)} sentences in both val and test, e.g. {leaked[:5]}")
+
+
+def controlled(auth: pd.DataFrame, seed: int, split: dict[str, str]) -> pd.DataFrame:
     rng = random.Random(seed)
     ids = sorted(auth["id"])
+    # Kept only to advance the generator exactly as before, so every perturbation text is unchanged;
+    # the val/test assignment now comes from sentence_split().
     rng.shuffle(ids)
-    split = {i: ("val" if k < len(ids) // 2 else "test") for k, i in enumerate(ids)}
     rows = []
     for r in auth.itertuples():
         base = {"input_id": r.id, "input_text": r.text, "input_label": r.label, "bias_type": r.bias_type,
@@ -195,16 +223,14 @@ def mitigation_eval(auth: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     return pd.concat(parts, ignore_index=True)
 
 
-def main(out: Path = OUT):
-    import hashlib
-    import json as _json
-
-    out.mkdir(parents=True, exist_ok=True)
+def main():
     auth = load_authored()
     mit = mitigation_eval(auth)
-    mit.to_parquet(out / "mitigation_eval.parquet", index=False)
-    gate = pd.concat([controlled(auth, s) for s in SEEDS], ignore_index=True)
-    gate.to_parquet(out / "gate_controlled.parquet", index=False)
+    mit.to_parquet(OUT / "mitigation_eval.parquet", index=False)
+    split = sentence_split(auth)
+    gate = pd.concat([controlled(auth, s, split) for s in SEEDS], ignore_index=True)
+    check_no_leakage(gate)
+    gate.to_parquet(OUT / "gate_controlled.parquet", index=False)
     print("mitigation_eval:", len(mit), mit.groupby(["source", "label"]).size().to_dict())
     g = gate[gate.seed == SEEDS[0]]
     print("gate_controlled (seed 11):", len(g), g.groupby(["gold"]).size().to_dict())
@@ -214,37 +240,32 @@ def main(out: Path = OUT):
         print(f"  {p}: {ex.input_text!r}\n     -> {ex.candidate_text!r}")
 
 
-def record_manifest(out: Path) -> dict:
-    """Add the derived sets (and their authored source) to dataset_manifest.json in `out` (V4 1.3)."""
-    import hashlib
-    import json as _json
+def resplit_only() -> None:
+    """Re-assign val/test in the existing gate_controlled.parquet without regenerating candidates.
 
-    man_p = out / "dataset_manifest.json"
-    man = _json.loads(man_p.read_text(encoding="utf-8")) if man_p.exists() else {}
-    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()[:16]  # noqa: E731
-    man["derived_files"] = {
-        "mitigation_eval.parquet": {"rows": len(pd.read_parquet(out / "mitigation_eval.parquet")), "sha256": sha(out / "mitigation_eval.parquet"),
-                                    "built_by": "scripts/build_mitigation_sets.py", "seed": 42},
-        "gate_controlled.parquet": {"rows": len(pd.read_parquet(out / "gate_controlled.parquet")), "sha256": sha(out / "gate_controlled.parquet"),
-                                    "built_by": "scripts/build_mitigation_sets.py", "perturbation_seeds": SEEDS},
-        "authored_cases.jsonl": {"rows": sum(1 for _ in open(AUTHORED, encoding="utf-8")), "sha256": sha(AUTHORED),
-                                 "path": "datasets/curated/authored_cases.jsonl"},
-    }
-    man_p.write_text(_json.dumps(man, indent=2), encoding="utf-8")
-    return man["derived_files"]
+    Needs no spaCy. Candidate texts are untouched; the authored file must match the parquet's inputs.
+    """
+    path = OUT / "gate_controlled.parquet"
+    gate = pd.read_parquet(path)
+    auth = load_authored()
+    stored = gate.drop_duplicates("input_id").set_index("input_id")
+    if set(stored.index) != set(auth["id"]) or any(
+            stored.loc[r.id, "input_label"] != r.label or stored.loc[r.id, "input_text"] != r.text for r in auth.itertuples()):
+        raise SystemExit("authored_cases.jsonl does not match gate_controlled.parquet; run the full build instead")
+    before = gate.groupby("input_id").split.nunique().gt(1).sum()
+    split = sentence_split(auth)
+    gate["split"] = gate.input_id.map(split)
+    check_no_leakage(gate)
+    gate.to_parquet(path, index=False)
+    u = gate.drop_duplicates(["input_id", "seed"])
+    print(f"resplit: sentences in both halves before {before}, after 0")
+    print("sentences per split:", gate.drop_duplicates("input_id").groupby(["split", "input_label"]).size().to_dict())
+    print("inputs (sentence x seed) per split:", u.groupby(["split", "input_label"]).size().to_dict())
+    print("candidates per split:", gate.groupby("split").size().to_dict())
 
 
 if __name__ == "__main__":
-    import argparse
-    import shutil
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=Path, default=OUT, help="output folder (temp folder = verify without overwriting)")
-    a = ap.parse_args()
-    if a.out != OUT:  # the builder reads detection.parquet and the manifest from the canonical folder
-        a.out.mkdir(parents=True, exist_ok=True)
-        for f in ["detection.parquet", "dataset_manifest.json"]:
-            if not (a.out / f).exists():
-                shutil.copy(OUT / f, a.out / f)
-    main(a.out)
-    print(record_manifest(a.out))
+    if "--resplit-only" in sys.argv:
+        resplit_only()
+    else:
+        main()

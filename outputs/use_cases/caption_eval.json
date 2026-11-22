@@ -1,0 +1,64 @@
+{
+  "id": "caption_eval",
+  "kind": "image",
+  "title": "Computer vision and caption evaluation",
+  "input": "First COCO val2017 image with the 'person' category in datasets/images/coco_val2017_subset",
+  "computed_at": "2026-10-24 07:14",
+  "image": "datasets/images/coco_val2017_subset/000000566436.jpg",
+  "license": {
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+  },
+  "captions": [
+    {
+      "captioner": "blip",
+      "model": "Salesforce/blip-image-captioning-base",
+      "text": "a man sitting on a bench",
+      "runtime_ms": 1431.9955419923645,
+      "error": null,
+      "display": "BLIP",
+      "clip_similarity": 0.30160874128341675,
+      "alignment": "High",
+      "detail_coverage": 0.2222222222222222,
+      "unsupported_attributes": [],
+      "gendered_terms": [
+        "man"
+      ],
+      "n_words": 6,
+      "detector_scores": {
+        "bert": 0.498870849609375,
+        "deberta": 0.43612828850746155,
+        "bart_mnli": 0.9894737601280212,
+        "rule_based": 0.0
+      },
+      "bias_score": 0.48111822456121445,
+      "bias_level": "Medium",
+      "rule_findings": []
+    },
+    {
+      "captioner": "florence",
+      "model": "florence-community/Florence-2-base",
+      "text": "A man sitting on top of a wooden bench.",
+      "runtime_ms": 6544.088084003306,
+      "error": null,
+      "display": "Florence-2",
+      "clip_similarity": 0.3208121061325073,
+      "alignment": "High",
+      "detail_coverage": 0.2222222222222222,
+      "unsupported_attributes": [],
+      "gendered_terms": [
+        "man"
+      ],
+      "n_words": 9,
+      "detector_scores": {
+        "bert": 0.5305644869804382,
+        "deberta": 0.7155435085296631,
+        "bart_mnli": 0.9893258810043335,
+        "rule_based": 0.0
+      },
+      "bias_score": 0.5588584691286087,
+      "bias_level": "Medium",
+      "rule_findings": []
+    }
+  ]
+}
