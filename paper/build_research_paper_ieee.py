@@ -29,10 +29,10 @@ TEMPLATE = HERE / "compsif" / "conference-template-a4.docx"
 TITLE = "FairLens: Bias Detection and Mitigation in AI Systems with a Reliability Gate"
 DEPT, COLLEGE, CITY = "Department of CSE", "B.M.S. College of Engineering", "Bengaluru, India"
 AUTHORS = [  # students first, then the guide
-    ("Suryansh Shahi", "UG Student"),
-    ("Sushma B T", "UG Student"),
-    ("Tamanna Barman", "UG Student"),
-    ("Trisha L Salian", "UG Student"),
+    ("Suryansh Shahi", ""),
+    ("Sushma B T", ""),
+    ("Tamanna Barman", ""),
+    ("Trisha L Salian", ""),
     ("Prof. Muthurani N H", "Assistant Professor"),
 ]
 COL_W = 3.37    # one column of the A4 template
@@ -135,7 +135,7 @@ def author_table(people, width):
         p.style = doc.styles["Author"]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run(name).font.size = Pt(11)
-        for line, it in ((role, True), (DEPT, True), (COLLEGE, True), (CITY, False)):
+        for line, it in [x for x in ((role, True), (DEPT, True), (COLLEGE, True), (CITY, False)) if x[0]]:
             p.add_run().add_break()
             r = p.add_run(line)
             r.italic = it
