@@ -42,6 +42,12 @@ def _tiny_bert_cls():
     return BertForSequenceClassification(BertConfig(**TINY_BERT, num_labels=2))
 
 
+@pytest.fixture(autouse=True)
+def _skip_numeric_selfcheck(monkeypatch):
+    """These tests fake device availability; the numerical self-check (tested in test_reproducibility) is skipped."""
+    monkeypatch.setenv("FAIRLENS_SKIP_SELFCHECK", "1")
+
+
 @pytest.fixture
 def fresh_manager(monkeypatch):
     monkeypatch.setattr(models, "_MANAGER", models.ModelManager(max_resident_mb=100_000))

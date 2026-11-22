@@ -5,7 +5,7 @@ left no run record. This script repeats it with the app's settings (standard pro
 and saves the analysis, mitigation result and fact checks under outputs/runs/<run_id>/.
 
 Run (Git Bash, project root):
-  HF_HOME="D:\\FairLens_cache\\hf" HF_HUB_OFFLINE=1 PYTHONUTF8=1 .venv/Scripts/python.exe -u scripts/run_live_demo.py
+  HF_HOME=<your Hugging Face cache folder> HF_HUB_OFFLINE=1 PYTHONUTF8=1 .venv/Scripts/python.exe -u scripts/run_live_demo.py
 """
 import sys
 from pathlib import Path

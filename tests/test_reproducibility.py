@@ -45,7 +45,7 @@ def test_manifest_has_all_required_fields(tmp_path):
     t = _run(tmp_path)
     m = json.loads(t.manifest_path.read_text(encoding="utf-8"))
     assert tracking.missing_fields(m) == []
-    assert "\\" not in json.dumps({k: m[k] for k in ["datasets", "output_dir", "artifacts"]})  # portable paths
+    assert "\\" not in json.dumps({k: m[k] for k in ["datasets", "outputs"]})  # portable paths
     assert m["device"] in {"cpu", "cuda", "mps"}
 
 
@@ -63,11 +63,11 @@ def test_copied_run_folder_appears_without_database(tmp_path):
     shutil.copytree(t.dir, dest / "runs" / t.run_id)
     runs = tracking.list_runs(db_path=dest / "runs.sqlite")  # no sqlite file exists on laptop B
     assert [r["run_id"] for r in runs] == [t.run_id] and runs[0]["status"] == "completed"
-    assert tracking.rebuild_index(dest / "runs.sqlite") == 1
+    assert tracking.rebuild_index(db_path=dest / "runs.sqlite") == 1
 
 
 def test_failed_selfcheck_excludes_accelerator(monkeypatch):
-    monkeypatch.setattr(hardware, "_mps_available", lambda: True)
+    monkeypatch.setattr(hardware, "_mps_available", lambda *_: True)
     monkeypatch.setattr(hardware, "accelerator_selfcheck", lambda dev, tol=1e-3: {"ok": False, "max_abs_diff": 5.0})
     assert "mps" not in hardware.available_devices()
     assert "mps" in hardware.available_devices(check=False)

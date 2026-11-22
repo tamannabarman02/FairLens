@@ -8,7 +8,8 @@ URL = "http://127.0.0.1:8599/"
 OUT = os.path.abspath(sys.argv[1])
 os.makedirs(OUT, exist_ok=True)
 PORT = 9333
-CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+CHROME = os.environ.get("CHROME_PATH") or os.path.join(
+    os.environ.get("PROGRAMFILES", ""), "Google", "Chrome", "Application", "chrome.exe")
 W, H = 1440, 900
 
 prof = os.path.join(OUT, "_profile")

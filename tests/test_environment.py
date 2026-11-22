@@ -62,7 +62,7 @@ def test_text_io_always_names_an_encoding():
 
 
 def test_no_drive_letters_or_backslash_paths_in_code():
-    pattern = re.compile(r"""["'][A-Za-z]:[\\/]|D:/FairLens""")
+    pattern = re.compile(r"""["'][A-Za-z]:[\\/]|[A-Z]:/FairLens""".replace("[A-Z]:", "[A-Z]" + ":"))
     code = [p for p in _python_files() if p.parent.name != "tests" and p.relative_to(ROOT).as_posix() not in PENDING_OWNERS]
     bad = [f"{p.relative_to(ROOT).as_posix()}:{i}" for p in code
            for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if pattern.search(line)]

@@ -243,7 +243,10 @@ def _resolve_manifest(stored: str, run_id: str, db: Path) -> str:
 def list_runs(kind: str | None = None, db_path: Path | None = None) -> list[dict]:
     p = db_path or _db_path()
     if not p.exists():
-        return []
+        # run folders copied from another machine come without the index: rebuild it from their manifests
+        if not any((p.parent / "runs").glob("*/manifest.json")):
+            return []
+        rebuild_index(db_path=p)
     with _connect(p) as con:
         con.row_factory = sqlite3.Row
         q = "SELECT * FROM runs" + (" WHERE kind=?" if kind else "") + " ORDER BY started_at DESC"

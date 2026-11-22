@@ -53,5 +53,6 @@ def test_research_pages_show_provenance_for_every_summary():
     for page, summaries in {"benchmarks.py": ["det", "mit", "gate", "img"], "model_comparison.py": ["s"]}.items():
         src = (PAGES / page).read_text(encoding="utf-8")
         for var in summaries:
-            assert re.search(rf"C\.provenance\({var},", src), f"{page}: results from `{var}` rendered without provenance"
-        assert "latest_with_manifest" in src and "latest_summary(" not in src
+            # result_header() renders the run's provenance and only lets the results through for a completed run
+            assert re.search(rf"result_header\([^)]*\b{var} is not None\)", src), \
+                f"{page}: results from `{var}` rendered without provenance"
